@@ -1,0 +1,10 @@
+mainmodule fibo {
+    mainchare start {
+        entry start(CkArgMsg*);
+    }
+
+    chare worker {
+        entry worker(int n, CProxy_worker par, bool r);
+        entry void result(int c);
+    }
+}

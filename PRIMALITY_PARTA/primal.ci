@@ -1,0 +1,10 @@
+mainmodule primal {
+    mainchare start {
+        entry start(CkArgMsg* m);
+        entry void result(int a, bool b);
+    }
+
+    chare test {
+        entry test(int a, CProxy_start parent);
+    }
+}
