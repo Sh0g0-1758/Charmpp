@@ -68,22 +68,3 @@ public:
 
 
 #include "primal.def.h"
-
-
-
-
-/*
-Hello sir!
-
-We have gone through the 2 chapters you attached and also did the exercises given at the end of chapter 2 (primality was one of them). We have also done part A of the primality exercise and for part B, we need to learn about passing data arrays in chares, We are hoping you would give us some reading material on it. Also, a couple questions: 
-
-1. Why does ckout not work with a long double.
-2. I noticed that the first run usually takes longer time compared to subsequent runs. I found it off since for now the chares work on atomic data and thus there should be no performance benefit of data being already in the cache. 
-
-That being said, We were particularly impressed by Charm++'s elegant runtime system, especially its intuitive approach to load balancing. The system's design, which uses chares as independent work units across processors, presents a compelling approach to parallel computing. We also wanted to apologize for the delay in communicating back to you. The past week was very hectic for both of us. I hope you understand. 
-
-Looking forward to hear from you soon. 
-
-Thank you
-Shourya Goel
-*/
