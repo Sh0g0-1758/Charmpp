@@ -1,0 +1,9 @@
+mainmodule prime{
+    mainchare Main{
+        entry Main(CkArgMsg* m);
+        entry void report(int p,bool result);
+    }
+    chare Worker{
+        entry Worker(int p,CProxy_Main main);
+    }
+}

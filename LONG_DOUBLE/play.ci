@@ -1,5 +1,0 @@
-mainmodule play {
-    mainchare start {
-        entry start(CkArgMsg* msg);
-    }
-}

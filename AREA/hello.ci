@@ -1,0 +1,9 @@
+mainmodule hello {
+  mainchare Main {
+    entry Main(CkArgMsg* m);
+  };
+  chare Compute{
+    entry Compute(double pi);
+    entry void findArea(double r,int numArea);
+  }
+};

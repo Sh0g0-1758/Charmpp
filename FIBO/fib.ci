@@ -1,0 +1,9 @@
+mainmodule fib{
+    mainchare Main{
+        entry Main(CkArgMsg* m);
+    }
+    chare Fib{
+        entry Fib(bool isRoot,int n,CProxy_Fib parent);
+        entry void result(int val);
+    }
+}

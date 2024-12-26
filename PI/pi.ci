@@ -1,0 +1,9 @@
+mainmodule piCalc{
+    mainchare Main{
+        entry Main(CkArgMsg* m);//m has numTrials and numChares
+        entry void done(int numTrials,int numInCircle);
+    }
+    chare Worker{
+        entry Worker(int numTrials,CProxy_Main m);
+    }
+}
