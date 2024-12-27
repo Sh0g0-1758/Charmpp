@@ -1,11 +1,11 @@
 #include "prime.decl.h"
-#include <map>
+#include <vector>
 
 //part A
 class Main : public CBase_Main{
 int totalPrime = 0;
 int donePrime = 0;
-std::map<int,int> mp;
+std::vector<std::pair<int,int>> vec;
 public:
     Main(CkArgMsg* m){
         if(m->argc!=2){
@@ -16,18 +16,17 @@ public:
         totalPrime = K;
         for(int i=0;i<K;i++){
             int p = rand();
-            if(mp.count(p)!=0){continue;}
-            mp[p]=-1;
-            CProxy_Worker::ckNew(p,thisProxy);
+            vec.push_back(std::make_pair(p,-1));
+            //pass the index to vector
+            CProxy_Worker::ckNew(p,i,thisProxy);
         }
         }
-    void report(int p,bool res){
-        ckout<<"reported "<<p<<" is "<<res<<endl;
-        mp[p] = res; 
+    void report(int idx,bool res){
+        vec[idx].second = res;
         donePrime++;
         if(donePrime==totalPrime){
-            for(auto r:mp){
-                ckout<<r.first<<" "<<r.second<<endl;
+            for(auto it:vec){
+                ckout<<it.first<<" "<<it.second<<endl;
             }
             CkExit();
         }
@@ -36,7 +35,7 @@ public:
 
 class Worker : public CBase_Worker{
 public:
-Worker(int p, CProxy_Main main){
+Worker(int p,int idx, CProxy_Main main){
     ckout<<"started worker with p "<<p<<endl;
     bool res=true;
     if(p<=1) res=false;
@@ -45,7 +44,7 @@ Worker(int p, CProxy_Main main){
             res=false;
         }
     }
-    main.report(p,res);
+    main.report(idx,res);
 
 }   
 };

@@ -1,9 +1,9 @@
 mainmodule prime{
     mainchare Main{
         entry Main(CkArgMsg* m);
-        entry void report(int p,bool result);
+        entry void report(int idx,bool result);
     }
     chare Worker{
-        entry Worker(int p,CProxy_Main main);
+        entry Worker(int p,int idx,CProxy_Main main);
     }
 }

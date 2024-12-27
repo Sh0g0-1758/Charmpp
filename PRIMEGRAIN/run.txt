@@ -1,0 +1,20 @@
+Running with grain size: 1
+3.502760
+3.576481
+4.045090
+Running with grain size: 2
+8.917808
+11.388225
+9.909686
+Running with grain size: 4
+17.353251
+16.782123
+16.907127
+Running with grain size: 8
+17.253241
+19.485841
+18.569117
+Running with grain size: 16
+18.391903
+18.746437
+20.685500
