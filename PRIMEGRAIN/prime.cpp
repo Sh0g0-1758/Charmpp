@@ -17,6 +17,9 @@ public:
         srand(42);//for reproducibility
         totalPrime = atoi(m->argv[1]); 
         batchSize = atoi(m->argv[2]); 
+        if(batchSize==-1){//using inf batch size
+            batchSize = totalPrime;
+        }
         vec.resize(totalPrime);
         begin = CkTimer();
         for(int i=0;i<totalPrime;i+=batchSize){
@@ -27,13 +30,13 @@ public:
                 vec[i+j].second = -1;
                 batch[j] = p;
             }
-            // ckout<<"Creating Worker for batch "<<i<<endl;
+            ckout<<"Creating Worker for batch "<<i<<endl;
             CProxy_Worker::ckNew(batch,i,std::min(batchSize,totalPrime-i),thisProxy);
             
         }
     }
     void report(int p[],int idx,int size){
-        // ckout<<"Received report for batch "<<idx<<endl;
+        ckout<<"Received report for batch "<<idx<<endl;
         for(int j=0;j<size;j++){
             vec[idx+j].second = p[j];
         }
@@ -44,7 +47,7 @@ public:
             //     ckout<<it.first<<" "<<it.second<<endl;
             // }
             // ckout<<"Time taken: "<<end-begin<<endl;
-            ckout<<end-begin<<endl;
+            ckout<<"time, "<<end-begin<<endl;
             CkExit();
         }
     }
