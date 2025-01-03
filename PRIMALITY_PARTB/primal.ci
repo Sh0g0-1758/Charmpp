@@ -3,10 +3,10 @@
 mainmodule primal {
     mainchare start {
         entry start(CkArgMsg* m);
-        entry void result(int a[GRAIN_SIZE], bool b[GRAIN_SIZE]);
+        entry void result(int index, bool b[GRAIN_SIZE]);
     }
 
     chare test {
-        entry test(int a[GRAIN_SIZE], CProxy_start parent);
+        entry test(int a[GRAIN_SIZE], int index, CProxy_start parent);
     }
 }

@@ -1,0 +1,4 @@
+.vscode
+*.decl.h
+*.def.h
+charmrun

@@ -1,6 +1,5 @@
-#include<stdio.h>
-#include<map>
-#include<random>
+#include <stdio.h>
+#include <random>
 #include "primal.decl.h"
 
 #define GRAIN_SIZE 10
@@ -14,38 +13,37 @@ int getRandom(int min, int max) {
 
 class start : public CBase_start {
 private:
-std::map<int, bool> primes;
-int tot;
-int curr;
+    int* check;
+    int* nums;
+    int tot;
+    int curr;
 public:
     start(CkArgMsg* m) : curr(0) {
         if(m -> argc != 2) {
             ckout << "Usage: " << m -> argv[0] << " <n>" << endl;
         }
         int n = atoi(m -> argv[1]);
+        nums = (int*)malloc(n * sizeof(int));
+        check = (int*)calloc(n, sizeof(int));
         tot = n / GRAIN_SIZE;
         for(int i = 0; i < tot; i++) {
             int n_arr[GRAIN_SIZE];
             for(int j = 0; j < GRAIN_SIZE; j++) {
                 n_arr[j] = getRandom(1, 100000000);
-                primes[n_arr[j]] = false;
+                nums[i * GRAIN_SIZE + j] = n_arr[j];
             }
-            CProxy_test offload = CProxy_test::ckNew(n_arr, thisProxy);
+            CProxy_test offload = CProxy_test::ckNew(n_arr, i, thisProxy);
         }
     }
 
-    void result(int a[GRAIN_SIZE], bool b[GRAIN_SIZE]) {
+    void result(int index, bool b[GRAIN_SIZE]) {
         for(int i = 0; i < GRAIN_SIZE; i++) {
-            primes[a[i]] = b[i];
+            check[index * GRAIN_SIZE + i] = b[i];
         }
         curr++;
         if(curr == tot) {
-            for(auto it = primes.begin(); it != primes.end(); it++) {
-                if(it -> second) {
-                    ckout << it -> first << " is prime" << endl;
-                } else {
-                    ckout << it -> first << " is not prime" << endl;
-                }
+            for(int i = 0; i < tot * GRAIN_SIZE; i++) {
+                ckout << nums[i] << " is " << (check[i] ? "prime" : "not prime") << endl;
             }
             CkExit();
         }
@@ -54,7 +52,7 @@ public:
 
 class test : public CBase_test {
 public:
-    test(int n_arr[GRAIN_SIZE], CProxy_start parent) {
+    test(int n_arr[GRAIN_SIZE], int index, CProxy_start parent) {
         bool b_arr[GRAIN_SIZE];
         for(int j = 0; j < GRAIN_SIZE; j++) {
             int n = n_arr[j];
@@ -62,7 +60,7 @@ public:
                 b_arr[j] = false;
             } else {
                 if(n % 2 == 0) {
-                    b_arr[j] = false;
+                    b_arr[j] = n == 2 ? true : false;
                 } else {
                     bool prime = true;
                     for(int i = 3; i <= (n / 2); i+=2) {
@@ -75,7 +73,7 @@ public:
                 }
             }
         }
-        parent.result(n_arr, b_arr);
+        parent.result(index, b_arr);
     }
 };
 
