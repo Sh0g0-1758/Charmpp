@@ -1,12 +1,10 @@
-#define GRAIN_SIZE 20000
-
 mainmodule primal {
     mainchare start {
         entry start(CkArgMsg* m);
-        entry void result(int index, bool b[GRAIN_SIZE]);
+        entry void result(int index, bool b[GRAIN_SIZE], int GRAIN_SIZE);
     }
 
     chare test {
-        entry test(int a[GRAIN_SIZE], int index, CProxy_start parent);
+        entry test(int a[GRAIN_SIZE], int GRAIN_SIZE, int index, CProxy_start parent);
     }
 }
