@@ -43,6 +43,7 @@ Worker(int p,int idx, CProxy_Main main){
     bool res=true;
     if(p<=1) res=false;
     if(p==2) res=true;
+    if(p%2==0) res=false;
     for(int i=3;i*i<=p;i+=2){
         if(0==p%i){
             res=false;

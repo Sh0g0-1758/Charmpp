@@ -14,7 +14,7 @@ public:
         if(m->argc!=3){
             ckout<<"usage: ./prime <numPrime> <batchSize>"<<endl;
         }  
-        srand(42);//for reproducibility
+        srand(time(NULL));//for reproducibility
         totalPrime = atoi(m->argv[1]); 
         batchSize = atoi(m->argv[2]); 
         if(batchSize==-1){//using inf batch size
@@ -25,7 +25,7 @@ public:
         for(int i=0;i<totalPrime;i+=batchSize){
             int batch[std::min(batchSize,totalPrime-i)];//M size array for worker
             for(int j=0;j<std::min(batchSize,totalPrime-i);j++){
-                int p = rand()%(int)1e12+2;
+                int p = rand();
                 vec[i+j].first = p;
                 vec[i+j].second = -1;
                 batch[j] = p;
@@ -53,22 +53,26 @@ public:
     }
 };
 
+bool isPrime(int p){
+    if(p<=1) return false;
+    if(p==2) return true;
+    if(p%2==0) return false;
+    for(int i=3;i*i<=p;i+=2){
+        if(0==p%i){
+            return false;
+        }
+    }
+    return true;
+}
+
 class Worker : public CBase_Worker{
 public:
 Worker(int batch[],int idx,int size,CProxy_Main main){
     
     bool res=true;
     for(int j=0;j<size;j++){
-        int p = batch[j];
-        if(p<=1) res=false;
-        if(p==2) res=true;
-        for(int i=3;i*i<=p;i+=2){
-            if(0==p%i){
-                res=false;
-                break;
-            }
-        }
-        batch[j] = res;
+      
+        batch[j] = isPrime(batch[j]);
     }
     main.report(batch,idx,size);
 }   
