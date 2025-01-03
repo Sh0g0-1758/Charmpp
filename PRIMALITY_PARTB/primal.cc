@@ -17,6 +17,8 @@ private:
     int* nums;
     int tot;
     int curr;
+    double begin = 0;
+    double end = 0;
 public:
     start(CkArgMsg* m) : curr(0) {
         if(m -> argc != 2) {
@@ -26,6 +28,7 @@ public:
         nums = (int*)malloc(n * sizeof(int));
         check = (int*)calloc(n, sizeof(int));
         tot = n / GRAIN_SIZE;
+        begin = CkTimer();
         for(int i = 0; i < tot; i++) {
             int n_arr[GRAIN_SIZE];
             for(int j = 0; j < GRAIN_SIZE; j++) {
@@ -42,9 +45,8 @@ public:
         }
         curr++;
         if(curr == tot) {
-            for(int i = 0; i < tot * GRAIN_SIZE; i++) {
-                ckout << nums[i] << " is " << (check[i] ? "prime" : "not prime") << endl;
-            }
+            end = CkTimer();
+            ckout << "Time: " << end - begin << " seconds" << endl;
             CkExit();
         }
     }
