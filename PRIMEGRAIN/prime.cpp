@@ -25,7 +25,7 @@ public:
         for(int i=0;i<totalPrime;i+=batchSize){
             int batch[std::min(batchSize,totalPrime-i)];//M size array for worker
             for(int j=0;j<std::min(batchSize,totalPrime-i);j++){
-                int p = rand();
+                int p = rand()%(int)1e12+2;
                 vec[i+j].first = p;
                 vec[i+j].second = -1;
                 batch[j] = p;
