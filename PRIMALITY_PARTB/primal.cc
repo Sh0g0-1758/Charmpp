@@ -2,7 +2,7 @@
 #include <random>
 #include "primal.decl.h"
 
-#define GRAIN_SIZE 10
+#define GRAIN_SIZE 20000
 
 int getRandom(int min, int max) {
     std::random_device rd;
