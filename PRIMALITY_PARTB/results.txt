@@ -1,12 +1,15 @@
-total: 20000
-Processors: 7
+total: 200000
+Processors: 20
 RESULTS (GRAIN_SIZE, TIME):
-1. 10, .195320 seconds
-2. 20, .195914 seconds
-3. 50, .176708 seconds
-4. 100, .184425 seconds
-5. 200, .173934 seconds
-6. 500, .177460 seconds
-7. 1000, .176546 seconds
-8. 2000, .163511 seconds
-9. 20000, .165695 seconds
+1. 10, 2.140519 seconds
+2. 20, 1.963627 seconds
+3. 50, 1.864780 seconds
+4. 100, 1.838208 seconds
+5. 200, 1.851216 seconds
+6. 500, 1.738463 seconds
+7. 1000, 1.809630 seconds
+8. 2000, 1.749538 seconds
+9. 10000, 1.814196 seconds
+10. 20000, 1.907061 seconds
+11. 50000, 1.908446 seconds
+12. 200000, 2.283462 seconds

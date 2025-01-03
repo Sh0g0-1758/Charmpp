@@ -3,7 +3,8 @@
 #include "primal.decl.h"
 
 int getRandom(int min, int max) {
-    std::mt19937_64 gen(42);
+    static int counter = 0;
+    std::mt19937_64 gen(42 + counter++);
     std::uniform_int_distribution<int> dis(min, max);
     return dis(gen);
 }
@@ -31,7 +32,7 @@ public:
         for(int i = 0; i < tot; i++) {
             int n_arr[GRAIN_SIZE];
             for(int j = 0; j < GRAIN_SIZE; j++) {
-                n_arr[j] = getRandom(100000000, 10000000000);
+                n_arr[j] = getRandom(100000000, 1000000000);
                 nums[i * GRAIN_SIZE + j] = n_arr[j];
             }
             CProxy_test offload = CProxy_test::ckNew(n_arr, GRAIN_SIZE, i, thisProxy);
