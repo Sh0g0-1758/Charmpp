@@ -61,7 +61,8 @@ Worker(int batch[],int idx,int size,CProxy_Main main){
     for(int j=0;j<size;j++){
         int p = batch[j];
         if(p<=1) res=false;
-        for(int i=2;i<p;i++){
+        if(p==2) res=true;
+        for(int i=3;i*i<=p;i+=2){
             if(0==p%i){
                 res=false;
             }

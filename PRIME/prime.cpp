@@ -11,12 +11,15 @@ public:
         if(m->argc!=2){
             ckout<<"usage: ./prime <num>"<<endl;
         }  
-        srand(time(NULL));
+        srand(42);
         int K = atoi(m->argv[1]);  
+        vec.resize(K);
         totalPrime = K;
         for(int i=0;i<K;i++){
-            int p = rand();
-            vec.push_back(std::make_pair(p,-1));
+            int p = rand()%(int)1e8+2;//range 2 to 10^8+1
+            vec[i].first = p;
+            vec[i].second = -1;
+
             //pass the index to vector
             CProxy_Worker::ckNew(p,i,thisProxy);
         }
@@ -39,7 +42,8 @@ Worker(int p,int idx, CProxy_Main main){
     ckout<<"started worker with p "<<p<<endl;
     bool res=true;
     if(p<=1) res=false;
-    for(int i=2;i<p;i++){
+    if(p==2) res=true;
+    for(int i=3;i*i<=p;i+=2){
         if(0==p%i){
             res=false;
         }
