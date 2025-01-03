@@ -31,7 +31,7 @@ public:
         for(int i = 0; i < tot; i++) {
             int n_arr[GRAIN_SIZE];
             for(int j = 0; j < GRAIN_SIZE; j++) {
-                n_arr[j] = getRandom(1, 100000000);
+                n_arr[j] = getRandom(100000000, 10000000000);
                 nums[i * GRAIN_SIZE + j] = n_arr[j];
             }
             CProxy_test offload = CProxy_test::ckNew(n_arr, GRAIN_SIZE, i, thisProxy);
