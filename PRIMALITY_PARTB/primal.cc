@@ -65,7 +65,7 @@ public:
                     b_arr[j] = n == 2 ? true : false;
                 } else {
                     bool prime = true;
-                    for(int i = 3; i <= (n / 2); i+=2) {
+                    for(int i = 3; i * i <= n; i+=2) {
                         if(n % i == 0) {
                             prime = false;
                             break;
