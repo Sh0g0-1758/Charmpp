@@ -65,6 +65,7 @@ Worker(int batch[],int idx,int size,CProxy_Main main){
         for(int i=3;i*i<=p;i+=2){
             if(0==p%i){
                 res=false;
+                break;
             }
         }
         batch[j] = res;

@@ -46,6 +46,7 @@ Worker(int p,int idx, CProxy_Main main){
     for(int i=3;i*i<=p;i+=2){
         if(0==p%i){
             res=false;
+            break;
         }
     }
     main.report(idx,res);
