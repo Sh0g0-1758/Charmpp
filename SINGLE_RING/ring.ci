@@ -1,0 +1,11 @@
+mainmodule ring {
+    mainchare start {
+        entry start(CkArgMsg* m);
+        entry [reductiontarget] void done(int res);
+    };
+
+    array[1D] ring {
+        entry ring(CProxy_start s, int r);
+        entry void work(int elems_rem, int trips_rem, int from_index, int fromProc);
+    }
+}

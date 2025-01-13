@@ -1,0 +1,10 @@
+mainmodule red {
+    mainchare start {
+        entry start(CkArgMsg* m);
+        entry [reductiontarget] void print(int result);
+    };
+
+    array [1D] elem {
+        entry elem(CProxy_start sp);
+    };
+};
