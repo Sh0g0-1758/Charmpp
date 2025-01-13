@@ -1,0 +1,12 @@
+mainmodule kmeans {
+    mainchare start {
+        entry start(CkArgMsg* m);
+        entry [reductiontarget] void UpdateCounts(int knum[k_clusters], int k_clusters);
+        entry [reductiontarget] void UpdateCoords(double ksum[size], int size);
+    };
+
+    array[1D] points {
+        entry points(CProxy_start startProxy, double xarr[num], double yarr[num], int num, int size);
+        entry void assign(double kx[k_clusters], double ky[k_clusters], int k_clusters);
+    }
+};
