@@ -1,0 +1,13 @@
+//single ring
+mainmodule singleRing{
+    mainchare Main{
+        entry Main(CkArgMsg* m);
+        entry void ringFinished();
+        entry [reductiontarget] void result(int result);
+    };
+
+    array [1d] Ring{
+        entry Ring(int rs, CProxy_Main m);
+        entry void step(int elementLeft, int tripsLeft, int fromIndex, int fromPE);
+    };
+}

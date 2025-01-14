@@ -1,0 +1,10 @@
+mainmodule Reduction{
+    mainchare Main{
+        entry Main(CkArgMsg* m);
+        entry [reductiontarget] void result(int result);
+    };
+
+    array [1d] Ele{
+        entry Ele(CProxy_Main m);
+    };
+}

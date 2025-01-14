@@ -1,0 +1,12 @@
+mainmodule kmean{
+    mainchare Main{
+        entry Main(CkArgMsg* m);
+        entry [reductiontarget] void UpdateCoords(int size, double coords[size]);
+        entry [reductiontarget] void UpdateCounts(int counts[size], int size);
+    };
+
+    array [1d] Points{
+        entry Points(int M,int N, int K, CProxy_Main m);
+        entry void Assign(double kmeans[2*k], int k);
+    }
+}
