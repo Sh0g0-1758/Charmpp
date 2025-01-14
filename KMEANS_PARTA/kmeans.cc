@@ -122,6 +122,10 @@ public:
             yarr[i] = lyarr[i];
         }
     }
+    ~points() {
+        free(xarr);
+        free(yarr);
+    }
     void assign(double kx[], double ky[], int k_clusters) {
         int start = thisIndex * size;
         int end = start + size;
