@@ -142,9 +142,9 @@ public:
             sumarr[(2 * cluster) + 1] += yarr[i];
         }
         CkCallback cbcnt(CkReductionTarget(start, UpdateCounts), startProxy);
-        contribute(sizeof(int) * k_clusters, &cntarr, CkReduction::sum_int, cbcnt);
+        contribute(sizeof(int) * k_clusters, cntarr, CkReduction::sum_int, cbcnt);
         CkCallback cbsum(CkReductionTarget(start, UpdateCoords), startProxy);
-        contribute(sizeof(double) * k_clusters * 2, &sumarr, CkReduction::sum_double, cbsum);
+        contribute(sizeof(double) * k_clusters * 2, sumarr, CkReduction::sum_double, cbsum);
     }
 };
 
