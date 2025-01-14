@@ -1,6 +1,32 @@
 #include <random>
 #include "kmeans.decl.h"
 
+struct ClusterData {
+    int count = 0;
+    double sum_x = 0.0;
+    double sum_y = 0.0;
+};
+
+CkReductionMsg *SumClusterData(int nmsg, CkReductionMsg **msgs) {
+    int k_clusters = msgs[0]->getSize() / sizeof(ClusterData);
+    ClusterData sum_cluster[k_clusters];
+    for(int i = 0; i < nmsg; i++) {
+        CkAssert(msgs[i]->getSize() == sizeof(ClusterData) * k_clusters);
+        ClusterData *msg = (ClusterData*)msgs[i]->getData();
+        for(int j = 0; j < k_clusters; j++) {
+            sum_cluster[j].count += msg[j].count;
+            sum_cluster[j].sum_x += msg[j].sum_x;
+            sum_cluster[j].sum_y += msg[j].sum_y;
+        }
+    }
+    return CkReductionMsg::buildNew(sizeof(ClusterData) * k_clusters, sum_cluster);
+}
+
+CkReduction::reducerType SumClusterDataReductionType;
+void register_custom(void) {
+    SumClusterDataReductionType = CkReduction::addReducer(SumClusterData);
+}
+
 class start : public CBase_start {
 private:
     int n; // number of points
@@ -8,11 +34,6 @@ private:
     int m; // length of the chare array
     double* kxarr;
     double* kyarr;
-    int* k_num;
-    double* k_sum_x;
-    double* k_sum_y;
-    bool num_done = false;
-    bool sum_done = false;
     CProxy_points pointsArray;
 public:
 
@@ -32,9 +53,6 @@ public:
         k = atoi(msg->argv[2]);
         m = atoi(msg->argv[3]);
         delete msg;
-        k_num = (int*)malloc(k * sizeof(int));
-        k_sum_x = (double*)malloc(k * sizeof(double));
-        k_sum_y = (double*)malloc(k * sizeof(double));
         double xarr[n];
         double yarr[n];
         for(int i = 0; i < n; i++) {
@@ -52,60 +70,36 @@ public:
             ky[i] = gen_rand();
             kyarr[i] = ky[i];
         }
-        for(int i = 0; i < m; i++) {
-            pointsArray(i).assign(kx, ky, k);
-        }
+        pointsArray.assign(kx, ky, k);
     }
 
-    void UpdateCounts(int knum[], int size) {
+    void Update(CkReductionMsg *msg) {
+        ClusterData *all_data = (ClusterData*)msg->getData();
+        bool converged = true;
+        double kx[k];
+        double ky[k];
         for(int i = 0; i < k; i++) {
-            k_num[i] = knum[i];
-        }
-        num_done = true;
-        check_convergence();
-    }
-
-    void UpdateCoords(double ksum[], int size) {
-        for(int i = 0; i < k; i++) {
-            k_sum_x[i] = ksum[2 * i];
-            k_sum_y[i] = ksum[(2 * i) + 1];
-        }
-        sum_done = true;
-        check_convergence();
-    }
-
-    void check_convergence() {
-        if(sum_done && num_done) {
-            sum_done = false;
-            num_done = false;
-            bool converged = true;
-            double kx[k];
-            double ky[k];
-            for(int i = 0; i < k; i++) {
-                if (k_num[i] == 0) {
-                    kx[i] = kxarr[i];
-                    ky[i] = kyarr[i];
-                } else {
-                    kx[i] = k_sum_x[i] / k_num[i];
-                    ky[i] = k_sum_y[i] / k_num[i];
-                }
-                double diff = ((kx[i] - kxarr[i]) * (kx[i] - kxarr[i])) + ((ky[i] - kyarr[i]) * (ky[i] - kyarr[i]));
-                kxarr[i] = kx[i];
-                kyarr[i] = ky[i];
-                if(diff > 0.001) {
-                    converged = false;
-                }
-            }
-            if (converged) {
-                for(int i = 0; i < k; i++) {
-                    CkPrintf("Cluster %d: (%f, %f)\n", i, kx[i], ky[i]);
-                }
-                CkExit();
+            if (all_data[i].count == 0) {
+                kx[i] = kxarr[i];
+                ky[i] = kyarr[i];
             } else {
-                for(int i = 0; i < m; i++) {
-                    pointsArray(i).assign(kx, ky, k);
-                }
+                kx[i] = all_data[i].sum_x / all_data[i].count;
+                ky[i] = all_data[i].sum_y / all_data[i].count;
             }
+            double diff = ((kx[i] - kxarr[i]) * (kx[i] - kxarr[i])) + ((ky[i] - kyarr[i]) * (ky[i] - kyarr[i]));
+            kxarr[i] = kx[i];
+            kyarr[i] = ky[i];
+            if(diff > 0.001) {
+                converged = false;
+            }
+        }
+        if (converged) {
+            for(int i = 0; i < k; i++) {
+                CkPrintf("Cluster %d: (%f, %f)\n", i, kx[i], ky[i]);
+            }
+            CkExit();
+        } else {
+            pointsArray.assign(kx, ky, k);
         }
     }
 };
@@ -129,8 +123,7 @@ public:
     void assign(double kx[], double ky[], int k_clusters) {
         int start = thisIndex * size;
         int end = start + size;
-        int cntarr[k_clusters] = {0};
-        double sumarr[k_clusters * 2] = {0.0};
+        ClusterData clusters[k_clusters];
         for(int i = start; i < end; i++) {
             double min_dist = 10; // numbers are between 0 and 1
             int cluster = -1;
@@ -141,14 +134,12 @@ public:
                     cluster = j;
                 }
             }
-            cntarr[cluster]++;
-            sumarr[2 * cluster] += xarr[i];
-            sumarr[(2 * cluster) + 1] += yarr[i];
+            clusters[cluster].count++;
+            clusters[cluster].sum_x += xarr[i];
+            clusters[cluster].sum_y += yarr[i];
         }
-        CkCallback cbcnt(CkReductionTarget(start, UpdateCounts), startProxy);
-        contribute(sizeof(int) * k_clusters, &cntarr, CkReduction::sum_int, cbcnt);
-        CkCallback cbsum(CkReductionTarget(start, UpdateCoords), startProxy);
-        contribute(sizeof(double) * k_clusters * 2, &sumarr, CkReduction::sum_double, cbsum);
+        CkCallback cbsum(CkReductionTarget(start, Update), startProxy);
+        contribute(sizeof(ClusterData) * k_clusters, clusters, SumClusterDataReductionType, cbsum);
     }
 };
 
