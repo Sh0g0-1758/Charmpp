@@ -52,9 +52,7 @@ public:
             ky[i] = gen_rand();
             kyarr[i] = ky[i];
         }
-        for(int i = 0; i < m; i++) {
-            pointsArray(i).assign(kx, ky, k);
-        }
+        pointsArray.assign(kx, ky, k);
     }
 
     void UpdateCounts(int knum[], int size) {
@@ -102,9 +100,7 @@ public:
                 }
                 CkExit();
             } else {
-                for(int i = 0; i < m; i++) {
-                    pointsArray(i).assign(kx, ky, k);
-                }
+                pointsArray.assign(kx, ky, k);
             }
         }
     }
