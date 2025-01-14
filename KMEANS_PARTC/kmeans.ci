@@ -1,0 +1,13 @@
+mainmodule kmeans {
+    initnode void register_custom(void);
+
+    mainchare start {
+        entry start(CkArgMsg* m);
+        entry [reductiontarget] void Update(CkReductionMsg* msg);
+    };
+
+    array[1D] points {
+        entry points(CProxy_start startProxy, double xarr[num], double yarr[num], int num, int size);
+        entry void assign(double kx[k_clusters], double ky[k_clusters], int k_clusters);
+    }
+};
