@@ -23,6 +23,14 @@ public:
         return dis(gen);
     }
 
+    ~start() {
+        free(kxarr);
+        free(kyarr);
+        free(k_num);
+        free(k_sum_x);
+        free(k_sum_y);
+    }
+
     start(CkArgMsg* msg) {
         if(msg->argc != 4) {
             ckout << "Usage: " << msg->argv[0] << " <n> <k> <m>" << endl;

@@ -44,6 +44,11 @@ public:
         return dis(gen);
     }
 
+    ~start() {
+        free(kxarr);
+        free(kyarr);
+    }
+
     start(CkArgMsg* msg) {
         if(msg->argc != 4) {
             ckout << "Usage: " << msg->argv[0] << " <n> <k> <m>" << endl;
@@ -119,6 +124,10 @@ public:
             xarr[i] = lxarr[i];
             yarr[i] = lyarr[i];
         }
+    }
+    ~points() {
+        free(xarr);
+        free(yarr);
     }
     void assign(double kx[], double ky[], int k_clusters) {
         int start = thisIndex * size;
