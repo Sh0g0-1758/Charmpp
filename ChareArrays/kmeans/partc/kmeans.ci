@@ -1,0 +1,16 @@
+mainmodule kmean{
+    initnode void registerRedKmeans(void); //for custom reduction
+
+    mainchare Main{
+        entry Main(CkArgMsg* m);
+        entry [reductiontarget] void kmeansReductionTets(CkReductionMsg* msg);//for reduction in single step
+        entry [reductiontarget] void updateMeans(CkReductionMsg* msg);
+        entry [reductiontarget] void CheckAndStep(int numChangedAllegence);
+    };
+
+    array [1d] Points{
+        entry Points(int M,int N, int K, CProxy_Main m);
+        entry void Assign(double kmeans[2*k], int k);
+        entry void reductionTest(int k);
+    }
+}

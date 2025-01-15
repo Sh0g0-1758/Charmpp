@@ -4,8 +4,7 @@ class Main: public CBase_Main{
 public:
     Main(CkArgMsg* m){
         // CProxy_Ele e = CProxy_Ele::ckNew(thisProxy,0);//blocks
-        CProxy_Ele e = CProxy_Ele::ckNew(thisProxy);//also blocks
-        CkPrintf("Starting reduction\n");
+        CProxy_Ele e = CProxy_Ele::ckNew(thisProxy,10);
     }
     void result(int result){
         CkPrintf("Result: %d\n",result);
@@ -14,13 +13,18 @@ public:
 };
 
 //reduction does not complete until all elements have contributed
-class Ele: public CBase_Ele{
+class a: public CBase_Ele{
 public:
-    Ele(CProxy_Main m){
-        CkCallback cb(CkReductionTarget(Main,result),m);
-        contribute(sizeof(int),&thisIndex,CkReduction::sum_int,cb);
+    a(CProxy_Main m){
+        ckout<<"Ele["<<thisIndex<<"] created on ("<<CkMyPe()<<")"<<endl;
     }
 
 };
 
+class b: public CBase_Ele{
+public:
+    b(CProxy_Main m){
+        ckout<<"EleTest["<<thisIndex<<"] created on ("<<CkMyPe()<<")"<<endl;
+    }
+};
 #include "Reduction.def.h"

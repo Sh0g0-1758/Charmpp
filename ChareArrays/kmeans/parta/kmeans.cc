@@ -20,7 +20,7 @@ public:
         int M = atoi(m->argv[1]);
         int N = atoi(m->argv[2]);
         int K = atoi(m->argv[3]);
-        srand(time(NULL));
+        srand(42);
 
         kmeans = new double[2*K];
         kmeansNew = new double[2*K];
@@ -129,6 +129,12 @@ public:
 
     void Assign(double kmeans[], int k){
         ckout<<"Points["<<thisIndex<<"] received new kmeans"<<endl;
+        //zero out coord and count
+        for(int i=0;i<k;i++){
+            coord[i*2] = 0;
+            coord[i*2+1] = 0;
+            count[i] = 0;
+        }
         for(int i=0;i<points.size();i++){
             double minDist = 1e9;
             int minIdx = -1;

@@ -1,8 +1,16 @@
 import matplotlib.pyplot as plt
+import argparse
 
-# Read values from results.txt and store as floats
+# check user input for part
+argparser = argparse.ArgumentParser()
+
+argparser.add_argument('--part', type=str, default='a', help='Part number')
+
+part = argparser.parse_args().part
+
 losses = []
-with open('results.txt', 'r') as f:
+## save runs in results.txt  ./charmrun ./kmeans ... > results.txt
+with open(f"part{part}/results.txt", 'r') as f:
     for line in f:
         line = line.strip()
         if line:
@@ -18,5 +26,5 @@ plt.title('Loss Curve')
 plt.xlabel('Iteration')
 plt.ylabel('Loss')
 plt.grid(True)
-plt.savefig('loss_curve.png')
+plt.savefig(f"part{part}/loss_curve.png")
 plt.show()

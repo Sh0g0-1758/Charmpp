@@ -1,8 +1,9 @@
 mainmodule kmean{
+
     mainchare Main{
         entry Main(CkArgMsg* m);
-        entry [reductiontarget] void UpdateCoords(int size, double coords[size]);
-        entry [reductiontarget] void UpdateCounts(int counts[size], int size);
+        entry [reductiontarget] void UpdateCoords(int size, double coords[size]);//for reduction in multiple steps
+        entry [reductiontarget] void UpdateCounts(int counts[size], int size);//
     };
 
     array [1d] Points{
