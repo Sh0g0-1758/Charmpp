@@ -5,30 +5,26 @@ struct ClusterData {
     int count = 0;
     double sum_x = 0.0;
     double sum_y = 0.0;
-    bool* cluster_assignments;
-    int num;
+    int changed_allegiance = 0;
 };
 
 CkReductionMsg *SumClusterData(int nmsg, CkReductionMsg **msgs) {
     int k_clusters = msgs[0]->getSize() / sizeof(ClusterData);
     ClusterData sum_cluster[k_clusters];
-    int num = ((ClusterData*)(msgs[0]->getData()))[0].num;
-    for(int i = 0; i < k_clusters; i++) {
-        sum_cluster[i].cluster_assignments = (bool*)malloc(num * sizeof(bool));
-    }
+    int changed_allegiance = 0;
     for(int i = 0; i < nmsg; i++) {
         CkAssert(msgs[i]->getSize() == sizeof(ClusterData) * k_clusters);
         ClusterData *msg = (ClusterData*)msgs[i]->getData();
         for(int j = 0; j < k_clusters; j++) {
+            if(j == 0) {
+                changed_allegiance += msg[j].changed_allegiance;
+            }
             sum_cluster[j].count += msg[j].count;
             sum_cluster[j].sum_x += msg[j].sum_x;
             sum_cluster[j].sum_y += msg[j].sum_y;
-            sum_cluster[j].num = num;
-            for(int k = 0; k < num; k++) {
-                sum_cluster[j].cluster_assignments[k] += msg[j].cluster_assignments[k];
-            }
         }
     }
+    sum_cluster[0].changed_allegiance = changed_allegiance;
     return CkReductionMsg::buildNew(sizeof(ClusterData) * k_clusters, sum_cluster);
 }
 
@@ -44,7 +40,6 @@ private:
     int m; // length of the chare array
     double* kxarr;
     double* kyarr;
-    int* cluster_assignments;
     CProxy_points pointsArray;
 public:
 
@@ -55,17 +50,9 @@ public:
         return dis(gen);
     }
 
-    void initassignclusters() {
-        cluster_assignments = (int*)malloc(n * sizeof(int));
-        for(int i = 0; i < n; i++) {
-            cluster_assignments[i] = -1;
-        }
-    }
-
     ~start() {
         free(kxarr);
         free(kyarr);
-        free(cluster_assignments);
     }
 
     start(CkArgMsg* msg) {
@@ -94,13 +81,11 @@ public:
             ky[i] = gen_rand();
             kyarr[i] = ky[i];
         }
-        initassignclusters();
         pointsArray.assign(kx, ky, k);
     }
 
     void Update(CkReductionMsg *msg) {
         ClusterData *all_data = (ClusterData*)msg->getData();
-        bool converged = true;
         double kx[k];
         double ky[k];
         for(int i = 0; i < k; i++) {
@@ -113,16 +98,8 @@ public:
             }
             kxarr[i] = kx[i];
             kyarr[i] = ky[i];
-            for(int j = 0; j < all_data[i].num; j++) {
-                if(all_data[i].cluster_assignments[j] == true) {
-                    if(cluster_assignments[j] != i) {
-                        converged = false;
-                    }
-                    cluster_assignments[j] = i;
-                }
-            }
         }
-        if (converged) {
+        if (all_data[0].changed_allegiance == 0) {
             for(int i = 0; i < k; i++) {
                 CkPrintf("Cluster %d: (%f, %f)\n", i, kx[i], ky[i]);
             }
@@ -138,12 +115,16 @@ private:
     CProxy_start startProxy;
     double* xarr;
     double* yarr;
-    int num;
     int size;
+    int* cluster_assignments;
 public:
-    points(CProxy_start startProxy, double lxarr[], double lyarr[], int num, int size) : startProxy(startProxy), num(num), size(size) {
+    points(CProxy_start startProxy, double lxarr[], double lyarr[], int num, int size) : startProxy(startProxy), size(size) {
         xarr = (double*)malloc(num * sizeof(double));
         yarr = (double*)malloc(num * sizeof(double));
+        cluster_assignments = (int*)malloc(size * sizeof(int));
+        for(int i = 0; i < size; i++) {
+            cluster_assignments[i] = -1;
+        }
         for(int i = 0; i < num; i++) {
             xarr[i] = lxarr[i];
             yarr[i] = lyarr[i];
@@ -152,15 +133,13 @@ public:
     ~points() {
         free(xarr);
         free(yarr);
+        free(cluster_assignments);
     }
     void assign(double kx[], double ky[], int k_clusters) {
         int start = thisIndex * size;
         int end = start + size;
         ClusterData clusters[k_clusters];
-        for(int i = 0; i < k_clusters; i++) {
-            clusters[i].cluster_assignments = (bool*)malloc(num * sizeof(bool));
-            clusters[i].num = num;
-        }
+        int changed_allegiance = 0;
         for(int i = start; i < end; i++) {
             double min_dist = 10; // numbers are between 0 and 1
             int cluster = -1;
@@ -171,11 +150,15 @@ public:
                     cluster = j;
                 }
             }
-            clusters[cluster].cluster_assignments[i] = true;
+            if(cluster_assignments[i - start] != cluster) {
+                changed_allegiance++;
+                cluster_assignments[i - start] = cluster;
+            }
             clusters[cluster].count++;
             clusters[cluster].sum_x += xarr[i];
             clusters[cluster].sum_y += yarr[i];
         }
+        clusters[0].changed_allegiance = changed_allegiance;
         CkCallback cbsum(CkReductionTarget(start, Update), startProxy);
         contribute(sizeof(ClusterData) * k_clusters, clusters, SumClusterDataReductionType, cbsum);
     }
