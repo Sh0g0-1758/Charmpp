@@ -1,0 +1,17 @@
+mainmodule oddeven{
+
+    mainchare Main{
+        entry Main(CkArgMsg* m);
+        entry void callback(int data, int index); 
+    };
+
+    array [1d] Elements{
+        entry Elements(CProxy_Main m, int numData);
+        entry void sendStage1_oddidx();
+        entry void recvStage1_oddidx(int data);
+        entry void recvStage2_oddidx(int data);
+        entry void recvStage1_evenidx(int data);
+        entry void recvStage2_evenidx(int data);
+        
+    }
+}

@@ -3,7 +3,7 @@
 
 class Main : public CBase_Main {
 int crecv = 0;
-int numData = 3;
+int numData = 2;
 std::vector<int> sortedData;
   public:
     Main(CkArgMsg* msg){
@@ -17,8 +17,9 @@ std::vector<int> sortedData;
         crecv++;
         if(crecv == numData){
             for(int i = 0; i < numData; i++){
-                ckout<<sortedData[i]<<endl;
+                ckout<<sortedData[i]<<" ";
             }
+            ckout<<endl;
             CkExit();
         }
     }
@@ -47,7 +48,7 @@ public:
             // but if it's the last index it will have to send at the beginning
             if(thisIndex == numData - 1){
                 state = 1;
-                sendStage2_evenidx();
+                // sendStage2_evenidx();
             }
         }
     }
@@ -56,15 +57,17 @@ public:
         //send data to thisIndex - 1
         //go to stage B[wait for one of 2 paths]
         ckout<<"here"<<endl;
+        ckout<<count<<endl;
         ckout<<"sent st1 from "<<thisIndex <<" to "<<thisIndex - 1<<endl;
-        if(count == (numData/2)*2){
+        if(count == numData){
             // ckout<< "Finished sorting" << endl;
             // CkExit();
             mainProxy.callback(data, thisIndex);
+            // return;
         }
         thisProxy(thisIndex - 1).recvStage1_evenidx(this->data);
         state = 1;
-        count += 2;
+        // count += 2;
     }
     void recvStage1_oddidx(int data){
         //recv data from thisIndex - 1
@@ -74,24 +77,29 @@ public:
         may need to callback a buffered message from 2
         */
        ckout<< "Recieved st1 at " << thisIndex  << " from " << thisIndex-1 << endl;
+       ckout<<state<<endl;
        if(state == 1){
+            count++;
             if(this->data < data){
                 this->data = data;
             }
             if(thisIndex == numData - 1){
                 state = 0;
                 sendStage1_oddidx();
+                return;
             }
             state = 2;
        }
        else if(state == 3){
         //make the 0<->1 exchange if needed and send back to 2
+        count+=2;
         if(this->data < data){
             this->data = data;
         }
         int temp = this->data;
         if(this->data > bufferData){
             this->data = bufferData;
+            // count++;
         }
         ckout<<"sent st2 from "<<thisIndex <<" to "<<thisIndex + 1<<endl;
         thisProxy(thisIndex + 1).recvStage2_evenidx(temp);
@@ -107,6 +115,7 @@ public:
         */
        ckout<< "Recieved st2 at " << thisIndex << " from " << thisIndex+1 << endl;
        if(state == 2){
+            count++;
             int origData = this->data;
             if(this->data > data){
                 this->data = data;
@@ -127,13 +136,22 @@ public:
     void recvStage1_evenidx(int data){
         //recieve from thisIndex + 1
         //also reply for the stage and send for Even Stage
+        ckout<<count<<endl;
         ckout<<"Recived st1 at "<<thisIndex<<" from "<<thisIndex + 1<<endl;
+        if(count == numData){
+            // ckout<< "Finished sorting" << endl;
+            // CkExit();
+            mainProxy.callback(data, thisIndex);
+            
+        }
         if(state == 0){
             // ckout<< "Recieved from " << thisIndex + 1 << " at " << thisIndex << endl;
+            count++;
             int origData = this->data;
             if(this->data > data){
                 this->data = data;
             }
+            ckout<<"sent st1 from "<<thisIndex <<" to "<<thisIndex + 1<<endl;
             thisProxy(thisIndex + 1).recvStage1_oddidx(origData);
             if(thisIndex == 0){
                 state = 0;
@@ -148,20 +166,24 @@ public:
             bufferData = data;
             state = 2;
         }
+        count += 2;
     }
 
     void recvStage2_evenidx(int data){
         //recv from this index - 1 
         ckout<<"Recived st2 at "<<thisIndex<<" from "<<thisIndex - 1<<endl;
         if(state == 1){
+            count++;
             if(this->data < data){
                 this->data = data;
             }
             state = 0;
         }
         else if (state == 2){
+           count+=2;
            this->data = data;
             int temp = this->data;
+            // count++;
             if(this->data > bufferData){
                 this->data = bufferData;
             }
