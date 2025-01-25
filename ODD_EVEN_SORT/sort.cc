@@ -7,6 +7,7 @@ private:
     int n; // number of points
     int* arr;
     int* result;
+    int curr = 0;
     CProxy_points pointsArray;
 public:
 
@@ -42,11 +43,8 @@ public:
 
     void fini(int indx, int elem) {
         result[indx] = elem;
-        bool finish = true;
-        for(int i = 0; i < n; i++) {
-            if(result[i] == 0) finish = false;
-        }
-        if(finish) {
+        curr++;
+        if(curr == n) {
             for(int i = 0; i < n; i++) {
                 CkPrintf("%d ", result[i]);
             }
@@ -73,16 +71,10 @@ public:
         }
     }
 
-    void stop() {
-        startProxy.fini(thisIndex, curr_elem);
-    }
-
     void comm(int indx, int elem) {
         steps++;
         if(steps == size) {
-            for(int i = 0; i < size; i++) {
-                thisProxy[i].stop();
-            }
+            startProxy.fini(thisIndex, curr_elem);
         }
         if(thisIndex % 2 == 0) {
             int new_elem = curr_elem;
