@@ -30,6 +30,12 @@ public:
         for(int i = 0; i < n; i++) {
             arr[i] = gen_rand();
         }
+        arr[0] = 6;
+        arr[1] = 5;
+        arr[2] = 4;
+        arr[3] = 1;
+        arr[4] = 2;
+        arr[5] = 3;
         int larr[n];
         for(int i = 0; i < n; i++) {
             larr[i] = arr[i];
@@ -42,6 +48,7 @@ public:
     }
 
     void fini(int indx, int elem) {
+        if(result[indx] != 0) return;
         result[indx] = elem;
         curr++;
         if(curr == n) {
@@ -72,10 +79,7 @@ public:
     }
 
     void comm(int indx, int elem) {
-        steps++;
-        if(steps == size) {
-            startProxy.fini(thisIndex, curr_elem);
-        }
+        // ckout << thisIndex << "(" << curr_elem << ")" << " received " << elem << " from " << indx << endl;
         if(thisIndex % 2 == 0) {
             int new_elem = curr_elem;
             if(indx > thisIndex && curr_elem > elem) {
@@ -88,25 +92,32 @@ public:
                 curr_elem = new_elem;
                 if(thisIndex != 0) thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
             }
+            steps++;
+            if(steps >= size) {
+                startProxy.fini(thisIndex, curr_elem);
+            }
         } else {
             if(indx < thisIndex) {
                 if(buff) {
                     buff = false;
                     // coming from behind
-                    int new_elem = curr_elem;
                     if(curr_elem < elem) {
-                        new_elem = elem;
+                        curr_elem = elem;
                     }
-                    curr_elem = new_elem;
                     
                     // buffered message
-                    new_elem = curr_elem;
+                    int new_elem = curr_elem;
                     if(curr_elem > buffer.second) {
                         new_elem = buffer.second;
                     }
                     thisProxy[buffer.first].comm(thisIndex, curr_elem);
                     curr_elem = new_elem;
                     thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+                    // two steps for odd
+                    steps+=2;
+                    if(steps >= size) {
+                        startProxy.fini(thisIndex, curr_elem);
+                    }
                 } else {
                     if(curr_elem < elem) {
                         curr_elem = elem;
@@ -115,6 +126,11 @@ public:
                         thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
                     } else {
                         prior_done = true;
+                    }
+                    // one step for odd
+                    steps++;
+                    if(steps >= size) {
+                        startProxy.fini(thisIndex, curr_elem);
                     }
                 }
             } else {
@@ -127,6 +143,11 @@ public:
                     thisProxy[indx].comm(thisIndex, curr_elem);
                     curr_elem = new_elem;
                     thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+                    // one step for odd
+                    steps++;
+                    if(steps >= size) {
+                        startProxy.fini(thisIndex, curr_elem);
+                    }
                 } else {
                     buffer = std::make_pair(indx, elem);
                     buff = true;
