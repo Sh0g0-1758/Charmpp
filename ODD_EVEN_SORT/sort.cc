@@ -34,7 +34,6 @@ public:
     }
 
     void fini(int indx, int elem) {
-        if(result[indx] != 0) return;
         result[indx] = elem;
         curr++;
         if(curr == n) {
@@ -84,7 +83,7 @@ public:
                 curr_elem = new_elem;
                 if(thisIndex != 0) thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
                 steps++;
-                if(steps >= size) {
+                if(steps == size) {
                     startProxy.fini(thisIndex, curr_elem);
                 }
             } else {
@@ -106,7 +105,7 @@ public:
                         thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
                         // two steps for even
                         steps+=2;
-                        if(steps >= size) {
+                        if(steps == size || steps == size + 1) {
                             startProxy.fini(thisIndex, curr_elem);
                         }
                     } else {
@@ -116,7 +115,7 @@ public:
                         prior_done = true;
                         // one step for even
                         steps++;
-                        if(steps >= size) {
+                        if(steps == size) {
                             startProxy.fini(thisIndex, curr_elem);
                         }
                     }
@@ -132,7 +131,7 @@ public:
                         if(thisIndex != 0) thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
                         // one step for even
                         steps++;
-                        if(steps >= size) {
+                        if(steps == size) {
                             startProxy.fini(thisIndex, curr_elem);
                         }
                     } else {
@@ -160,7 +159,7 @@ public:
                     thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
                     // two steps for odd
                     steps+=2;
-                    if(steps >= size) {
+                    if(steps == size || steps == size + 1) {
                         startProxy.fini(thisIndex, curr_elem);
                     }
                 } else {
@@ -174,7 +173,7 @@ public:
                     }
                     // one step for odd
                     steps++;
-                    if(steps >= size) {
+                    if(steps == size) {
                         startProxy.fini(thisIndex, curr_elem);
                     }
                 }
@@ -190,7 +189,7 @@ public:
                     thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
                     // one step for odd
                     steps++;
-                    if(steps >= size) {
+                    if(steps == size) {
                         startProxy.fini(thisIndex, curr_elem);
                     }
                 } else {
