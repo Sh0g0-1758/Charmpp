@@ -88,6 +88,7 @@ public:
                 }
             } else {
                 if(indx < thisIndex) {
+                    // There is a buffered message, process two messages
                     if(buff) {
                         buff = false;
                         // coming from behind
@@ -103,16 +104,19 @@ public:
                         thisProxy[buffer.first].comm(thisIndex, curr_elem);
                         curr_elem = new_elem;
                         thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+
                         // two steps for even
                         steps+=2;
                         if(steps == size || steps == size + 1) {
                             startProxy.fini(thisIndex, curr_elem);
                         }
                     } else {
+                        // There is no buffered message, process the message coming from behind
                         if(curr_elem < elem) {
                             curr_elem = elem;
                         }
                         prior_done = true;
+
                         // one step for even
                         steps++;
                         if(steps == size) {
@@ -120,6 +124,7 @@ public:
                         }
                     }
                 } else {
+                    // The message coming from behind is already here. 
                     if(prior_done) {
                         prior_done = false;
                         int new_elem = curr_elem;
@@ -135,6 +140,7 @@ public:
                             startProxy.fini(thisIndex, curr_elem);
                         }
                     } else {
+                        // The message coming from behind is not here yet, so buffer the message coming from ahead. 
                         buffer = std::make_pair(indx, elem);
                         buff = true;
                     }
@@ -142,6 +148,7 @@ public:
             }
         } else {
             if(indx < thisIndex) {
+                // There is a buffered message, process two messages
                 if(buff) {
                     buff = false;
                     // coming from behind
@@ -163,6 +170,7 @@ public:
                         startProxy.fini(thisIndex, curr_elem);
                     }
                 } else {
+                    // There is no buffered message, process the message coming from behind
                     if(curr_elem < elem) {
                         curr_elem = elem;
                     }
@@ -178,6 +186,7 @@ public:
                     }
                 }
             } else {
+                // The message coming from behind is already here.
                 if(prior_done) {
                     prior_done = false;
                     int new_elem = curr_elem;
@@ -193,6 +202,7 @@ public:
                         startProxy.fini(thisIndex, curr_elem);
                     }
                 } else {
+                    // The message coming from behind is not here yet, so buffer the message coming from ahead.
                     buffer = std::make_pair(indx, elem);
                     buff = true;
                 }
