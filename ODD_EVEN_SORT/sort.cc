@@ -4,7 +4,7 @@
 
 class start : public CBase_start {
 private:
-    int n; // number of points
+    int n;
     int* arr;
     int* result;
     int curr = 0;
@@ -30,21 +30,7 @@ public:
         for(int i = 0; i < n; i++) {
             arr[i] = gen_rand();
         }
-        arr[0] = 6;
-        arr[1] = 5;
-        arr[2] = 4;
-        arr[3] = 1;
-        arr[4] = 2;
-        arr[5] = 3;
-        int larr[n];
-        for(int i = 0; i < n; i++) {
-            larr[i] = arr[i];
-        }
-        for(int i = 0; i < n; i++) {
-            CkPrintf("%d ", arr[i]);
-        }
-        ckout << endl;
-        pointsArray = CProxy_points::ckNew(thisProxy, larr, n, n);
+        pointsArray = CProxy_points::ckNew(thisProxy, arr, n, n);
     }
 
     void fini(int indx, int elem) {
@@ -52,10 +38,19 @@ public:
         result[indx] = elem;
         curr++;
         if(curr == n) {
+            std::sort(arr, arr + n);
+            bool correct = true;
             for(int i = 0; i < n; i++) {
-                CkPrintf("%d ", result[i]);
+                if(arr[i] != result[i]) {
+                    correct = false;
+                    break;
+                }
             }
-            ckout << endl;
+            if(correct) {
+                ckout << "Correct Result" << endl;
+            } else {
+                ckout << "Incorrect Result" << endl;
+            }
             CkExit();
         }
     }
@@ -68,7 +63,7 @@ private:
     int size;
     bool prior_done = false;
     int buff = false;
-    std::pair<int, int> buffer; // indx, elem
+    std::pair<int, int> buffer;
     int steps = 0;
 public:
     points(CProxy_start startProxy, int arr[], int size) : startProxy(startProxy), size(size) {
@@ -79,22 +74,72 @@ public:
     }
 
     void comm(int indx, int elem) {
-        // ckout << thisIndex << "(" << curr_elem << ")" << " received " << elem << " from " << indx << endl;
         if(thisIndex % 2 == 0) {
-            int new_elem = curr_elem;
-            if(indx > thisIndex && curr_elem > elem) {
-                new_elem = elem;
-            } else if(indx < thisIndex && curr_elem < elem) {
-                new_elem = elem;
-            }
-            if(indx > thisIndex) {
+            if(steps == 0 || thisIndex == 0) {
+                int new_elem = curr_elem;
+                if(curr_elem > elem) {
+                    new_elem = elem;
+                }
                 thisProxy[indx].comm(thisIndex, curr_elem);
                 curr_elem = new_elem;
                 if(thisIndex != 0) thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
-            }
-            steps++;
-            if(steps >= size) {
-                startProxy.fini(thisIndex, curr_elem);
+                steps++;
+                if(steps >= size) {
+                    startProxy.fini(thisIndex, curr_elem);
+                }
+            } else {
+                if(indx < thisIndex) {
+                    if(buff) {
+                        buff = false;
+                        // coming from behind
+                        if(curr_elem < elem) {
+                            curr_elem = elem;
+                        }
+                        
+                        // buffered message
+                        int new_elem = curr_elem;
+                        if(curr_elem > buffer.second) {
+                            new_elem = buffer.second;
+                        }
+                        thisProxy[buffer.first].comm(thisIndex, curr_elem);
+                        curr_elem = new_elem;
+                        thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+                        // two steps for even
+                        steps+=2;
+                        if(steps >= size) {
+                            startProxy.fini(thisIndex, curr_elem);
+                        }
+                    } else {
+                        if(curr_elem < elem) {
+                            curr_elem = elem;
+                        }
+                        prior_done = true;
+                        // one step for even
+                        steps++;
+                        if(steps >= size) {
+                            startProxy.fini(thisIndex, curr_elem);
+                        }
+                    }
+                } else {
+                    if(prior_done) {
+                        prior_done = false;
+                        int new_elem = curr_elem;
+                        if(curr_elem > elem) {
+                            new_elem = elem;
+                        }
+                        thisProxy[indx].comm(thisIndex, curr_elem);
+                        curr_elem = new_elem;
+                        if(thisIndex != 0) thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+                        // one step for even
+                        steps++;
+                        if(steps >= size) {
+                            startProxy.fini(thisIndex, curr_elem);
+                        }
+                    } else {
+                        buffer = std::make_pair(indx, elem);
+                        buff = true;
+                    }
+                }
             }
         } else {
             if(indx < thisIndex) {
