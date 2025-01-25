@@ -3,7 +3,7 @@
 
 class Main : public CBase_Main {
 int crecv = 0;
-int numData = 2;
+int numData = 4;
 std::vector<int> sortedData;
   public:
     Main(CkArgMsg* msg){
@@ -56,15 +56,10 @@ public:
     void sendStage1_oddidx(){
         //send data to thisIndex - 1
         //go to stage B[wait for one of 2 paths]
-        ckout<<"here"<<endl;
-        ckout<<count<<endl;
+        // ckout<<"here"<<endl;
+        // ckout<<count<<endl;
         ckout<<"sent st1 from "<<thisIndex <<" to "<<thisIndex - 1<<endl;
-        if(count == numData){
-            // ckout<< "Finished sorting" << endl;
-            // CkExit();
-            mainProxy.callback(data, thisIndex);
-            // return;
-        }
+        
         thisProxy(thisIndex - 1).recvStage1_evenidx(this->data);
         state = 1;
         // count += 2;
@@ -77,7 +72,7 @@ public:
         may need to callback a buffered message from 2
         */
        ckout<< "Recieved st1 at " << thisIndex  << " from " << thisIndex-1 << endl;
-       ckout<<state<<endl;
+    //    ckout<<state<<endl;
        if(state == 1){
             count++;
             if(this->data < data){
@@ -86,6 +81,9 @@ public:
             if(thisIndex == numData - 1){
                 state = 0;
                 sendStage1_oddidx();
+                if(count == numData){
+                    mainProxy.callback(data, thisIndex);
+                }
                 return;
             }
             state = 2;
@@ -105,6 +103,9 @@ public:
         thisProxy(thisIndex + 1).recvStage2_evenidx(temp);
         sendStage1_oddidx();
        }
+       if(count == numData){
+            mainProxy.callback(data, thisIndex);
+        }
     }
     void recvStage2_oddidx(int data){
         //recv from thisIndex + 1
@@ -131,12 +132,15 @@ public:
             bufferData = data;
             state = 3;
        }
+       if(count == numData){
+            mainProxy.callback(data, thisIndex);
+        }
     }
 
     void recvStage1_evenidx(int data){
         //recieve from thisIndex + 1
         //also reply for the stage and send for Even Stage
-        ckout<<count<<endl;
+        // ckout<<count<<endl;
         ckout<<"Recived st1 at "<<thisIndex<<" from "<<thisIndex + 1<<endl;
         if(count == numData){
             // ckout<< "Finished sorting" << endl;
@@ -155,6 +159,9 @@ public:
             thisProxy(thisIndex + 1).recvStage1_oddidx(origData);
             if(thisIndex == 0){
                 state = 0;
+                if(count == numData){
+                    mainProxy.callback(data, thisIndex);
+                }
                 return;
             }
             ckout<<"sent st2 from "<<thisIndex <<" to "<<thisIndex - 1<<endl;
@@ -166,7 +173,10 @@ public:
             bufferData = data;
             state = 2;
         }
-        count += 2;
+        if(count == numData){
+            mainProxy.callback(data, thisIndex);
+        }
+        
     }
 
     void recvStage2_evenidx(int data){
@@ -193,6 +203,9 @@ public:
             ckout<<"sent st2 from "<<thisIndex <<" to "<<thisIndex - 1<<endl;
             thisProxy(thisIndex - 1).recvStage2_oddidx(this->data);
             state = 1;
+        }
+        if(count == numData){
+            mainProxy.callback(data, thisIndex);
         }
     }
 };
