@@ -1,0 +1,147 @@
+#include <random>
+#include <utility>
+#include "sort.decl.h"
+
+class start : public CBase_start {
+private:
+    int n; // number of points
+    int* arr;
+    int* result;
+    CProxy_points pointsArray;
+public:
+
+    int gen_rand() {
+        static int counter = 0;
+        std::mt19937_64 gen(counter++);
+        std::uniform_int_distribution<int> dis(1, 10000);
+        return dis(gen);
+    }
+
+    start(CkArgMsg* msg) {
+        if(msg->argc != 2) {
+            ckout << "Usage: " << msg->argv[0] << " <size_of_arr>" << endl;
+            CkExit();
+        }
+        n = atoi(msg->argv[1]);
+        delete msg;
+        arr = (int*)malloc(n * sizeof(int));
+        result = (int*)calloc(n, sizeof(int));
+        for(int i = 0; i < n; i++) {
+            arr[i] = gen_rand();
+        }
+        int larr[n];
+        for(int i = 0; i < n; i++) {
+            larr[i] = arr[i];
+        }
+        for(int i = 0; i < n; i++) {
+            CkPrintf("%d ", arr[i]);
+        }
+        ckout << endl;
+        pointsArray = CProxy_points::ckNew(thisProxy, larr, n, n);
+    }
+
+    void fini(int indx, int elem) {
+        result[indx] = elem;
+        bool finish = true;
+        for(int i = 0; i < n; i++) {
+            if(result[i] == 0) finish = false;
+        }
+        if(finish) {
+            for(int i = 0; i < n; i++) {
+                CkPrintf("%d ", result[i]);
+            }
+            ckout << endl;
+            CkExit();
+        }
+    }
+};
+
+class points : public CBase_points {
+private:
+    CProxy_start startProxy;
+    int curr_elem;
+    int size;
+    bool prior_done = false;
+    int buff = false;
+    std::pair<int, int> buffer; // indx, elem
+    int steps = 0;
+public:
+    points(CProxy_start startProxy, int arr[], int size) : startProxy(startProxy), size(size) {
+        curr_elem = arr[thisIndex];
+        if(thisIndex % 2 != 0) {
+            thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+        }
+    }
+
+    void stop() {
+        startProxy.fini(thisIndex, curr_elem);
+    }
+
+    void comm(int indx, int elem) {
+        steps++;
+        if(steps == size) {
+            for(int i = 0; i < size; i++) {
+                thisProxy[i].stop();
+            }
+        }
+        if(thisIndex % 2 == 0) {
+            int new_elem = curr_elem;
+            if(indx > thisIndex && curr_elem > elem) {
+                new_elem = elem;
+            } else if(indx < thisIndex && curr_elem < elem) {
+                new_elem = elem;
+            }
+            if(indx > thisIndex) {
+                thisProxy[indx].comm(thisIndex, curr_elem);
+                curr_elem = new_elem;
+                if(thisIndex != 0) thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+            }
+        } else {
+            if(indx < thisIndex) {
+                if(buff) {
+                    buff = false;
+                    // coming from behind
+                    int new_elem = curr_elem;
+                    if(curr_elem < elem) {
+                        new_elem = elem;
+                    }
+                    curr_elem = new_elem;
+                    
+                    // buffered message
+                    new_elem = curr_elem;
+                    if(curr_elem > buffer.second) {
+                        new_elem = buffer.second;
+                    }
+                    thisProxy[buffer.first].comm(thisIndex, curr_elem);
+                    curr_elem = new_elem;
+                    thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+                } else {
+                    if(curr_elem < elem) {
+                        curr_elem = elem;
+                    }
+                    if(thisIndex == size - 1) {
+                        thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+                    } else {
+                        prior_done = true;
+                    }
+                }
+            } else {
+                if(prior_done) {
+                    prior_done = false;
+                    int new_elem = curr_elem;
+                    if(curr_elem > elem) {
+                        new_elem = elem;
+                    }
+                    thisProxy[indx].comm(thisIndex, curr_elem);
+                    curr_elem = new_elem;
+                    thisProxy[thisIndex - 1].comm(thisIndex, curr_elem);
+                } else {
+                    buffer = std::make_pair(indx, elem);
+                    buff = true;
+                }
+            }
+        }
+    }
+};
+
+#include "sort.def.h"

@@ -1,0 +1,12 @@
+mainmodule sort {
+    mainchare start {
+        entry start(CkArgMsg* m);
+        entry void fini(int indx, int elem);
+    };
+
+    array[1D] points {
+        entry points(CProxy_start startProxy, int arr[size], int size);
+        entry void stop();
+        entry void comm(int indx, int elem);
+    }
+};
