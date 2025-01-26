@@ -3,6 +3,7 @@ mainmodule oddeven{
     mainchare Main{
         entry Main(CkArgMsg* m);
         entry void callback(int data, int index); 
+        entry void getInitData(int data, int index);
     };
 
     array [1d] Elements{
