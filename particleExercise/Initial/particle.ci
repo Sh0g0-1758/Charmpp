@@ -1,8 +1,9 @@
-module particle{
+mainmodule particle{
     mainchare Main{
         entry Main(CkArgMsg* mgs);
         //entry [reductiontarget] void getMeans(int mean);
         entry [reductiontarget] void getTotal(int total);
+        entry void callback(int epoch,int count);
     }
     array [2d] ParticleGrid{
         entry ParticleGrid(CProxy_Main m, int sizeX, int sizeY);
