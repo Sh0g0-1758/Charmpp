@@ -242,13 +242,11 @@ public:
             CkExit();
         }
         send_to_this_index[it.first] = true;
-        // ckout << "Sending " << it.second.size() << " particles to [" << it.first.first << ", " << it.first.second << "]" << endl;
         thisProxy(it.first.first, it.first.second).receiver(curr_stage, arr, 2 * it.second.size());
       }
       to_send.clear();
       for(auto& it: send_to_this_index) {
           if(it.second == false) {
-            //   ckout << "Sending 0 particles to [" << it.first.first << ", " << it.first.second << "]" << endl;
               thisProxy(it.first.first, it.first.second).receiver(curr_stage, nullptr, 0);
           }
           it.second = false;
@@ -256,7 +254,6 @@ public:
   }
 
   void receiver(int stage, float data[], int size) {
-    // ckout << "Stage: " << stage << " Chare: [" << thisIndex.x << ", " << thisIndex.y << "] received " << size / 2 << " particles" << endl;
     for(int i = 0; i < size; i += 2) {
         buff_store[stage].push_back({data[i], data[i + 1]});
     }
