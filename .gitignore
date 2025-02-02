@@ -3,3 +3,6 @@
 *.def.h
 charmrun
 playground
+*.log.gz
+*.sts
+*.projrc
