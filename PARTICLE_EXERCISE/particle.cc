@@ -119,29 +119,18 @@ public:
     lowy = thisIndex.y * size_of_chare;
     highx = lowx + size_of_chare > 100.0 ? 100.0 : lowx + size_of_chare;
     highy = lowy + size_of_chare > 100.0 ? 100.0 : lowy + size_of_chare;
-    // How many data messages each chare should receive.
-    // Basically taking care of boundary chares.
-    if (thisIndex.y == 0) {
-      if (thisIndex.x == 0 or thisIndex.x == row_size - 1) {
-        target_recv = 3;
-      } else {
-        target_recv = 5;
-      }
-    } else if (thisIndex.y == row_size - 1) {
-      if (thisIndex.x == 0 or thisIndex.x == row_size - 1) {
-        target_recv = 3;
-      } else {
-        target_recv = 5;
-      }
-    } else if (thisIndex.x == 0 and thisIndex.y != 0 and
-               thisIndex.y != row_size - 1) {
-      // CORNERS ARE ALREADY COVERED
+    // Check if point is on corner
+    if ((thisIndex.x == 0 || thisIndex.x == row_size - 1) &&
+        (thisIndex.y == 0 || thisIndex.y == row_size - 1)) {
+      target_recv = 3;
+    }
+    // Check if point is on edge but not corner
+    else if (thisIndex.x == 0 || thisIndex.x == row_size - 1 ||
+             thisIndex.y == 0 || thisIndex.y == row_size - 1) {
       target_recv = 5;
-    } else if (thisIndex.x == row_size - 1 and thisIndex.y != 0 and
-               thisIndex.y != row_size - 1) {
-      // CORNERS ARE ALREADY COVERED
-      target_recv = 5;
-    } else {
+    }
+    // Interior points
+    else {
       target_recv = 8;
     }
     // RANDOM SEED
