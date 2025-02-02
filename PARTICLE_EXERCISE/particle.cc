@@ -24,7 +24,7 @@ public:
     num_elems_per_chare = atoi(msg->argv[1]);
     size_of_chare = atoi(msg->argv[2]);
     delete msg;
-    row_size = ceil(100 / size_of_chare);
+    row_size = ceil(100.0 / size_of_chare);
 
     boxesArray = CProxy_boxes::ckNew(thisProxy, num_elems_per_chare, row_size,
                                      size_of_chare, row_size, row_size);
@@ -32,7 +32,7 @@ public:
   }
 
   void status(int tot) {
-    if(tot != num_elems_per_chare * row_size * row_size) {
+    if(tot != (num_elems_per_chare * (row_size * row_size + std::ceil((row_size * row_size) * 1.0 / 5)))) {
       ckout << "[Error] Some particles were lost" << endl;
       CkExit();
     }
@@ -50,7 +50,7 @@ public:
 
 class boxes : public CBase_boxes {
 private:
-  int n;
+  int num_elems;
 
   struct point {
     float x;
@@ -62,7 +62,6 @@ private:
   std::map<int, int> recv_count;
   int target_recv;
   std::map<std::pair<int, int>, std::vector<point>> to_send;
-  std::vector<int> state;
 
   int row_size;
   int lowx;
@@ -100,9 +99,13 @@ public:
 
   boxes(CProxy_start startProxy, int num_elems_per_chare, int row_size,
         int size_of_chare)
-      : startProxy(startProxy), n(num_elems_per_chare), row_size(row_size),
+      : startProxy(startProxy), row_size(row_size),
         size_of_chare(size_of_chare) {
-    state.push_back(n);
+    if(CkMyPe() % 5 == 0) {
+        num_elems = num_elems_per_chare * 2;
+    } else {
+        num_elems = num_elems_per_chare;
+    }
     lowx = thisIndex.x * size_of_chare;
     lowy = thisIndex.y * size_of_chare;
     highx = lowx + size_of_chare > 100.0 ? 100.0 : lowx + size_of_chare;
@@ -123,7 +126,7 @@ public:
     }
     // RANDOM SEED
     seed = thisIndex.x * row_size + thisIndex.y + 42;
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < num_elems; i++)
       store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy)});
   }
 
@@ -202,7 +205,6 @@ public:
       } else {
         // start the next stage as the current chare has all the updated data
         // that it needs.
-        state.push_back(store.size());
         start();
       }
     }
