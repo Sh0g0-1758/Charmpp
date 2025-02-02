@@ -31,29 +31,17 @@ public:
     boxesArray.start();
   }
 
-  void status(int curr_stage, int Xindx, int Yindx, int max, int avg,
-              int curr) {
-    stage_check[curr_stage] += curr;
-    ckout << "Chare [" << Xindx << ", " << Yindx << "] has " << curr
-          << " particles. Over the last 10 iterations, Max: " << max
-          << " Avg: " << avg << endl;
+  void status(int tot) {
+    if(tot != num_elems_per_chare * row_size * row_size) {
+      ckout << "[Error] Some particles were lost" << endl;
+      CkExit();
+    }
   }
 
   void fini() {
     chare_done++;
     if (chare_done == row_size * row_size) {
-      bool particle_lost = false;
-      for (auto it : stage_check) {
-        if (it.second != num_elems_per_chare * row_size * row_size) {
-          particle_lost = true;
-          break;
-        }
-      }
-      if (particle_lost) {
-        ckout << "[Error] Some particles were lost" << endl;
-      } else {
-        ckout << "[Success] All particles were accounted for" << endl;
-      }
+      ckout << "[Success] All particles were accounted for" << endl;
       ckout << "Simulation finished" << endl;
       CkExit();
     }
@@ -206,13 +194,9 @@ public:
       buff_store[curr_stage].clear();
       recv_count[curr_stage] = 0;
       curr_stage++;
-      if (curr_stage % 10 == 0) {
-        startProxy.status(curr_stage, thisIndex.x, thisIndex.y,
-                          *std::max_element(state.begin(), state.end()),
-                          std::accumulate(state.begin(), state.end(), 0.0) / 10,
-                          state[9]);
-        state.clear();
-      }
+      int tot = store.size();
+      CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
+      contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
       if (curr_stage == 100) {
         startProxy.fini();
       } else {
