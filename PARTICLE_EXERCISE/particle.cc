@@ -72,7 +72,6 @@ private:
   std::map<int, int> recv_count;
   int target_recv;
   std::map<std::pair<int,int>, std::vector<point>> to_send;
-  std::map<std::pair<int,int>, bool> send_to_this_index;
   std::vector<int> state;
 
   int row_size;
@@ -120,78 +119,26 @@ public:
     highy = lowy + size_of_chare > 100.0 ? 100.0 : lowy + size_of_chare;
     // How many data messages each chare should receive.
     // Basically taking care of boundary chares.
-    // Default number of messages are 8.
-    // We also store the index of the chare to which we have to send the data to
     if(thisIndex.y == 0) {
-        if(thisIndex.x == 0) {
+        if(thisIndex.x == 0 or thisIndex.x == row_size - 1) {
             target_recv = 3;
-            send_to_this_index[{thisIndex.x + 1, thisIndex.y}] = false;
-            send_to_this_index[{thisIndex.x, thisIndex.y + 1}] = false;
-            send_to_this_index[{thisIndex.x + 1, thisIndex.y + 1}] = false;
-        } else if(thisIndex.x == row_size - 1) {
-            target_recv = 3;
-            send_to_this_index[{thisIndex.x - 1, thisIndex.y}] = false;
-            send_to_this_index[{thisIndex.x, thisIndex.y + 1}] = false;
-            send_to_this_index[{thisIndex.x - 1, thisIndex.y + 1}] = false;
         } else {
             target_recv = 5;
-            for(int i = -1; i <= 1; i++) {
-                for(int j = 0; j <= 1; j++) {
-                    if(i == 0 and j == 0) continue;
-                    send_to_this_index[{thisIndex.x + i, thisIndex.y + j}] = false;
-                }
-            }
         }
     } else if(thisIndex.y == row_size - 1) {
-        if(thisIndex.x == 0) {
+        if(thisIndex.x == 0 or thisIndex.x == row_size - 1) {
             target_recv = 3;
-            send_to_this_index[{thisIndex.x + 1, thisIndex.y}] = false;
-            send_to_this_index[{thisIndex.x, thisIndex.y - 1}] = false;
-            send_to_this_index[{thisIndex.x + 1, thisIndex.y - 1}] = false;
-        } else if (thisIndex.x == row_size - 1) {
-            target_recv = 3;
-            send_to_this_index[{thisIndex.x - 1, thisIndex.y}] = false;
-            send_to_this_index[{thisIndex.x, thisIndex.y - 1}] = false;
-            send_to_this_index[{thisIndex.x - 1, thisIndex.y - 1}] = false;
         } else {
             target_recv = 5;
-            for(int i = -1; i <= 1; i++) {
-                for(int j = -1; j <= 0; j++) {
-                    if(i == 0 and j == 0) continue;
-                    send_to_this_index[{thisIndex.x + i, thisIndex.y + j}] = false;
-                }
-            }
         }
-    } else if(thisIndex.x == 0) {
+    } else if(thisIndex.x == 0 and thisIndex.y != 0 and thisIndex.y != row_size - 1) {
         // CORNERS ARE ALREADY COVERED
-        if(thisIndex.y != 0 and thisIndex.y != row_size - 1) {
-            target_recv = 5;
-            for(int i = 0; i <= 1; i++) {
-                for(int j = -1; j <= 1; j++) {
-                    if(i == 0 and j == 0) continue;
-                    send_to_this_index[{thisIndex.x + i, thisIndex.y + j}] = false;
-                }
-            }
-        }
-    } else if(thisIndex.x == row_size - 1) {
+        target_recv = 5;
+    } else if(thisIndex.x == row_size - 1 and thisIndex.y != 0 and thisIndex.y != row_size - 1) {
         // CORNERS ARE ALREADY COVERED
-        if(thisIndex.y != 0 and thisIndex.y != row_size - 1) {
-            target_recv = 5;
-            for(int i = -1; i <= 0; i++) {
-                for(int j = -1; j <= 1; j++) {
-                    if(i == 0 and j == 0) continue;
-                    send_to_this_index[{thisIndex.x + i, thisIndex.y + j}] = false;
-                }
-            }
-        }
+        target_recv = 5;
     } else {
         target_recv = 8;
-        for(int i = -1; i <= 1; i++) {
-            for(int j = -1; j <= 1; j++) {
-                if(i == 0 and j == 0) continue;
-                send_to_this_index[{thisIndex.x + i, thisIndex.y + j}] = false;
-            }
-        }
     }
     // RANDOM SEED
     seed = thisIndex.x * row_size + thisIndex.y + 42;
@@ -231,26 +178,24 @@ public:
         }
       }
 
-      for (auto& it: to_send) {
-        float* arr = (float*)malloc(2 * it.second.size() * sizeof(float));
-        for(int i = 0; i < it.second.size(); i++) {
-            arr[i] = it.second[i].x;
-            arr[i + 1] = it.second[i].y;
-        }
-        if(send_to_this_index.find(it.first) == send_to_this_index.end()) {
-            ckout << "Error: Sending to an invalid index" << endl;
-            CkExit();
-        }
-        send_to_this_index[it.first] = true;
-        thisProxy(it.first.first, it.first.second).receiver(curr_stage, arr, 2 * it.second.size());
+      for(int i = -1; i <= 1; i++) {
+          for(int j = -1; j <= 1; j++) {
+              if(i == 0 and j == 0) {
+                  continue;
+              }
+              if(thisIndex.x + i < 0 or thisIndex.x + i >= row_size or thisIndex.y + j < 0 or thisIndex.y + j >= row_size) {
+                  continue;
+              }
+              std::vector<point> data = to_send[{thisIndex.x + i, thisIndex.y + j}];
+              float* arr = (float*)malloc(2 * data.size() * sizeof(float));
+              for(int i = 0; i < data.size(); i++) {
+                  arr[i] = data[i].x;
+                  arr[i + 1] = data[i].y;
+              }
+              thisProxy(thisIndex.x + i, thisIndex.y + j).receiver(curr_stage, arr, 2 * data.size());
+          }
       }
       to_send.clear();
-      for(auto& it: send_to_this_index) {
-          if(it.second == false) {
-              thisProxy(it.first.first, it.first.second).receiver(curr_stage, nullptr, 0);
-          }
-          it.second = false;
-      }
   }
 
   void receiver(int stage, float data[], int size) {
