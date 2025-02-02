@@ -1,8 +1,8 @@
 #include "particle.decl.h"
+#include <map>
 #include <random>
 #include <utility>
 #include <vector>
-#include <map>
 
 #define NUM_ITERATIONS 100
 
@@ -13,7 +13,7 @@ private:
   int row_size;
   CProxy_boxes boxesArray;
   int chare_done = 0;
-  std::map<int,int> stage_check;
+  std::map<int, int> stage_check;
 
 public:
   start(CkArgMsg *msg) {
@@ -31,30 +31,32 @@ public:
     boxesArray.start();
   }
 
-  void status(int curr_stage, int Xindx, int Yindx, int max, int avg, int curr) {
-    stage_check[curr_stage]+=curr;
+  void status(int curr_stage, int Xindx, int Yindx, int max, int avg,
+              int curr) {
+    stage_check[curr_stage] += curr;
     ckout << "Chare [" << Xindx << ", " << Yindx << "] has " << curr
-          << " particles. Over the last 10 iterations, Max: " << max << " Avg: " << avg << endl;
+          << " particles. Over the last 10 iterations, Max: " << max
+          << " Avg: " << avg << endl;
   }
 
   void fini() {
     chare_done++;
     if (chare_done == row_size * row_size) {
-        bool particle_lost = false;
-        for(auto it: stage_check) {
-            if(it.second != num_elems_per_chare * row_size * row_size) {
-                particle_lost = true;
-                break;
-            }
+      bool particle_lost = false;
+      for (auto it : stage_check) {
+        if (it.second != num_elems_per_chare * row_size * row_size) {
+          particle_lost = true;
+          break;
         }
-        if(particle_lost) {
-            ckout << "[Error] Some particles were lost" << endl;
-        } else {
-            ckout << "[Success] All particles were accounted for" << endl;
-        }
-        ckout << "Simulation finished" << endl;
-        CkExit();
-    }   
+      }
+      if (particle_lost) {
+        ckout << "[Error] Some particles were lost" << endl;
+      } else {
+        ckout << "[Success] All particles were accounted for" << endl;
+      }
+      ckout << "Simulation finished" << endl;
+      CkExit();
+    }
   }
 };
 
@@ -71,7 +73,7 @@ private:
   std::map<int, std::vector<point>> buff_store;
   std::map<int, int> recv_count;
   int target_recv;
-  std::map<std::pair<int,int>, std::vector<point>> to_send;
+  std::map<std::pair<int, int>, std::vector<point>> to_send;
   std::vector<int> state;
 
   int row_size;
@@ -119,26 +121,28 @@ public:
     highy = lowy + size_of_chare > 100.0 ? 100.0 : lowy + size_of_chare;
     // How many data messages each chare should receive.
     // Basically taking care of boundary chares.
-    if(thisIndex.y == 0) {
-        if(thisIndex.x == 0 or thisIndex.x == row_size - 1) {
-            target_recv = 3;
-        } else {
-            target_recv = 5;
-        }
-    } else if(thisIndex.y == row_size - 1) {
-        if(thisIndex.x == 0 or thisIndex.x == row_size - 1) {
-            target_recv = 3;
-        } else {
-            target_recv = 5;
-        }
-    } else if(thisIndex.x == 0 and thisIndex.y != 0 and thisIndex.y != row_size - 1) {
-        // CORNERS ARE ALREADY COVERED
+    if (thisIndex.y == 0) {
+      if (thisIndex.x == 0 or thisIndex.x == row_size - 1) {
+        target_recv = 3;
+      } else {
         target_recv = 5;
-    } else if(thisIndex.x == row_size - 1 and thisIndex.y != 0 and thisIndex.y != row_size - 1) {
-        // CORNERS ARE ALREADY COVERED
+      }
+    } else if (thisIndex.y == row_size - 1) {
+      if (thisIndex.x == 0 or thisIndex.x == row_size - 1) {
+        target_recv = 3;
+      } else {
         target_recv = 5;
+      }
+    } else if (thisIndex.x == 0 and thisIndex.y != 0 and
+               thisIndex.y != row_size - 1) {
+      // CORNERS ARE ALREADY COVERED
+      target_recv = 5;
+    } else if (thisIndex.x == row_size - 1 and thisIndex.y != 0 and
+               thisIndex.y != row_size - 1) {
+      // CORNERS ARE ALREADY COVERED
+      target_recv = 5;
     } else {
-        target_recv = 8;
+      target_recv = 8;
     }
     // RANDOM SEED
     seed = thisIndex.x * row_size + thisIndex.y + 42;
@@ -147,80 +151,87 @@ public:
   }
 
   void start() {
-      for (int j = 0; j < store.size(); j++) {
-        RAND_UPDATE(x);
-        RAND_UPDATE(y);
-      }
+    for (int j = 0; j < store.size(); j++) {
+      RAND_UPDATE(x);
+      RAND_UPDATE(y);
+    }
 
-      for (auto it = store.begin(); it != store.end();) {
-        if ((*it).x < lowx or (*it).x > highx or (*it).y < lowy or
-            (*it).y > highy) {
-            int newXindex = thisIndex.x;
-            int newYindex = thisIndex.y;
-            if ((*it).x < lowx) {
-                newXindex--;
-            } else if ((*it).x > highx) {
-                newXindex++;
-            }
-            if ((*it).y < lowy) {
-                newYindex--;
-            } else if ((*it).y > highy) {
-                newYindex++;
-            }
-            if(newXindex < 0 or newXindex >= row_size or newYindex < 0 or newYindex >= row_size) {
-                it++;
-                continue;
-            }
-            to_send[{newXindex, newYindex}].push_back((*it));
-            it = store.erase(it);
-        } else {
-          ++it;
+    for (auto it = store.begin(); it != store.end();) {
+      if ((*it).x < lowx or (*it).x > highx or (*it).y < lowy or
+          (*it).y > highy) {
+        int newXindex = thisIndex.x;
+        int newYindex = thisIndex.y;
+        if ((*it).x < lowx) {
+          newXindex--;
+        } else if ((*it).x > highx) {
+          newXindex++;
         }
+        if ((*it).y < lowy) {
+          newYindex--;
+        } else if ((*it).y > highy) {
+          newYindex++;
+        }
+        if (newXindex < 0 or newXindex >= row_size or newYindex < 0 or
+            newYindex >= row_size) {
+          it++;
+          continue;
+        }
+        to_send[{newXindex, newYindex}].push_back((*it));
+        it = store.erase(it);
+      } else {
+        ++it;
       }
+    }
 
-      for(int i = -1; i <= 1; i++) {
-          for(int j = -1; j <= 1; j++) {
-              if(i == 0 and j == 0) {
-                  continue;
-              }
-              if(thisIndex.x + i < 0 or thisIndex.x + i >= row_size or thisIndex.y + j < 0 or thisIndex.y + j >= row_size) {
-                  continue;
-              }
-              std::vector<point> data = to_send[{thisIndex.x + i, thisIndex.y + j}];
-              float* arr = (float*)malloc(2 * data.size() * sizeof(float));
-              for(int i = 0; i < data.size(); i++) {
-                  arr[i] = data[i].x;
-                  arr[i + 1] = data[i].y;
-              }
-              thisProxy(thisIndex.x + i, thisIndex.y + j).receiver(curr_stage, arr, 2 * data.size());
-          }
+    for (int i = -1; i <= 1; i++) {
+      for (int j = -1; j <= 1; j++) {
+        if (i == 0 and j == 0) {
+          continue;
+        }
+        if (thisIndex.x + i < 0 or thisIndex.x + i >= row_size or
+            thisIndex.y + j < 0 or thisIndex.y + j >= row_size) {
+          continue;
+        }
+        std::vector<point> data = to_send[{thisIndex.x + i, thisIndex.y + j}];
+        float *arr = (float *)malloc(2 * data.size() * sizeof(float));
+        for (int i = 0; i < data.size(); i++) {
+          arr[i] = data[i].x;
+          arr[i + 1] = data[i].y;
+        }
+        thisProxy(thisIndex.x + i, thisIndex.y + j)
+            .receiver(curr_stage, arr, 2 * data.size());
       }
-      to_send.clear();
+    }
+    to_send.clear();
   }
 
   void receiver(int stage, float data[], int size) {
-    for(int i = 0; i < size; i += 2) {
-        buff_store[stage].push_back({data[i], data[i + 1]});
+    for (int i = 0; i < size; i += 2) {
+      buff_store[stage].push_back({data[i], data[i + 1]});
     }
     recv_count[stage]++;
-    if(recv_count[curr_stage] == target_recv) {
-        for(auto it: buff_store[curr_stage]) {
-            store.push_back(it);
-        }
-        buff_store[curr_stage].clear();
-        recv_count[curr_stage] = 0;
-        curr_stage++;
-        if(curr_stage % 10 == 0) {
-            startProxy.status(curr_stage, thisIndex.x, thisIndex.y, *std::max_element(state.begin(), state.end()), std::accumulate(state.begin(), state.end(), 0.0) / 10, state[9]);
-            state.clear();
-        }
-        if (curr_stage == 100) {
-            startProxy.fini();
-        } else {
-            // start the next stage as the current chare has all the updated data that it needs.
-            state.push_back(store.size());
-            start();
-        }
+    if (recv_count[curr_stage] == target_recv) {
+      for (auto it : buff_store[curr_stage]) {
+        store.push_back(it);
+      }
+      buff_store[curr_stage].clear();
+      recv_count[curr_stage] = 0;
+      curr_stage++;
+      if (curr_stage % 10 == 0) {
+        startProxy.status(curr_stage, thisIndex.x, thisIndex.y,
+                          *std::max_element(state.begin(), state.end()),
+                          std::accumulate(state.begin(), state.end(), 0.0) / 10,
+                          state[9]);
+        state.clear();
+      }
+      if (curr_stage == 100) {
+        startProxy.fini();
+      } else {
+        // start the next stage as the current chare has all the updated data
+        // that it needs.
+        state.push_back(store.size());
+        start();
+      }
     }
   }
 };
