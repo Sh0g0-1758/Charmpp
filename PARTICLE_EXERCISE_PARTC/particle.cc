@@ -206,7 +206,7 @@ public:
           continue;
         }
         std::vector<point> data = to_send[{thisIndex.x + i, thisIndex.y + j}];
-        float *arr = (float *)malloc(2 * data.size() * sizeof(float));
+        float arr[2 * data.size()];
         for (int i = 0; i < data.size(); i++) {
           arr[2 * i] = data[i].x;
           arr[(2 * i) + 1] = data[i].y;
