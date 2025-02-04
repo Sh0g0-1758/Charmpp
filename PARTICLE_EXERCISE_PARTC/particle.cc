@@ -240,9 +240,6 @@ public:
         startProxy.fini();
       } else if(curr_stage % 10 == 0) {
         // check correctness and load balance after every 10 stages
-        int tot = store.size();
-        CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
-        contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
         AtSync();
       } else {
         // start the next stage as the current chare has all the updated data
@@ -252,7 +249,12 @@ public:
     }
   }
 
-  void ResumeFromSync() { start(); }
+  void ResumeFromSync() {
+    int tot = store.size();
+    CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
+    contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
+    start();
+  }
 };
 
 #include "particle.def.h"
