@@ -88,13 +88,13 @@ public:
 
 #define RAND_UPDATE(t)                                                         \
   if (direction()) {                                                           \
-    store[j].t = store[j].t +                                                  \
+    float temp_##t = store[j].t +                                              \
                  static_cast<float>(rand() / static_cast<float>(RAND_MAX));    \
-    store[j].t > 100.0 ? 100.0 : store[j].t;                                   \
+    store[j].t = temp_##t > 100.0 ? 100.0 : temp_##t;                          \
   } else {                                                                     \
-    store[j].t = store[j].t -                                                  \
+    float temp_##t = store[j].t -                                              \
                  static_cast<float>(rand() / static_cast<float>(RAND_MAX));    \
-    store[j].t < 0.0 ? 0.0 : store[j].t;                                       \
+    store[j].t = temp_##t < 0.0 ? 0.0 : temp_##t;                              \
   }
 
   boxes(CProxy_start startProxy, int num_elems_per_chare, int row_size,
