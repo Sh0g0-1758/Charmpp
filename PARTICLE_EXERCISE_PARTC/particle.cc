@@ -116,6 +116,7 @@ public:
   boxes(CProxy_start startProxy, int num_elems_per_chare, int row_size,
         int size_of_chare)
       : startProxy(startProxy), row_size(row_size) {
+    usesAtSync = true;
     int num_elems;
     if(CkMyPe() % 5 == 0) {
         num_elems = num_elems_per_chare * 2;
@@ -213,11 +214,14 @@ public:
       buff_store[curr_stage].clear();
       recv_count[curr_stage] = 0;
       curr_stage++;
-      int tot = store.size();
-      CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
-      contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
       if (curr_stage == 100) {
         startProxy.fini();
+      } else if(curr_stage % 10 == 0) {
+        // check correctness and load balance after every 10 stages
+        int tot = store.size();
+        CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
+        contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
+        AtSync();
       } else {
         // start the next stage as the current chare has all the updated data
         // that it needs.
@@ -225,6 +229,8 @@ public:
       }
     }
   }
+
+  void ResumeFromSync() { start(); }
 };
 
 #include "particle.def.h"
