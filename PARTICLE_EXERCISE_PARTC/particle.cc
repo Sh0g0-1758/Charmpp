@@ -93,7 +93,10 @@ public:
     p|buff_store;
     p|recv_count;
     p|to_send;
+    p|startProxy;
   }
+
+  boxes(CkMigrateMessage *msg) {}
 
   float gen_rand(int start, int end) {
     std::mt19937_64 gen(seed);
@@ -206,6 +209,8 @@ public:
   }
 
   void receiver(int stage, float data[], int size) {
+    ckout << "Stage: " << stage << " Chare: " << thisIndex.x << " "
+          << thisIndex.y << endl;
     for (int i = 0; i < size; i += 2) {
       buff_store[stage].push_back({data[i], data[i + 1]});
     }
