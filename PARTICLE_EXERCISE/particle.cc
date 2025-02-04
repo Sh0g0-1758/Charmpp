@@ -3,6 +3,7 @@
 #include <random>
 #include <utility>
 #include <vector>
+#include <pup_stl.h>
 
 #define NUM_ITERATIONS 100
 
@@ -48,15 +49,18 @@ public:
   }
 };
 
+struct point {
+  float x;
+  float y;
+};
+
+inline void operator|(PUP::er &p,point &c) {
+  p|c.x;
+  p|c.y;
+}
+
 class boxes : public CBase_boxes {
 private:
-  int num_elems;
-
-  struct point {
-    float x;
-    float y;
-  };
-
   std::vector<point> store;
   std::map<int, std::vector<point>> buff_store;
   std::map<int, int> recv_count;
@@ -68,7 +72,6 @@ private:
   int highx;
   int lowy;
   int highy;
-  int size_of_chare;
 
   int seed;
 
@@ -77,6 +80,19 @@ private:
   CProxy_start startProxy;
 
 public:
+  void pup(PUP::er &p) {
+    CBase_boxes::pup(p);
+    p|row_size;
+    p|target_recv;
+    p|lowx; p|highx; p|lowy; p|highy;
+    p|seed;
+    p|curr_stage;
+    p|store;
+    p|buff_store;
+    p|recv_count;
+    p|to_send;
+  }
+
   float gen_rand(int start, int end) {
     std::mt19937_64 gen(seed);
     seed += seed;
@@ -99,8 +115,8 @@ public:
 
   boxes(CProxy_start startProxy, int num_elems_per_chare, int row_size,
         int size_of_chare)
-      : startProxy(startProxy), row_size(row_size),
-        size_of_chare(size_of_chare) {
+      : startProxy(startProxy), row_size(row_size) {
+    int num_elems;
     if(CkMyPe() % 5 == 0) {
         num_elems = num_elems_per_chare * 2;
     } else {
