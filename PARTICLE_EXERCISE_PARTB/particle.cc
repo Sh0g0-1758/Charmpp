@@ -1,10 +1,10 @@
 #include "particle.decl.h"
+#include <cstdlib>
+#include <ctime>
 #include <map>
 #include <random>
 #include <utility>
 #include <vector>
-#include <ctime>
-#include <cstdlib>
 
 #define NUM_ITERATIONS 100
 
@@ -34,12 +34,10 @@ public:
     boxesArray.start();
   }
 
-  void init(int tot) {
-    total_number_of_particles = tot;
-  }
+  void init(int tot) { total_number_of_particles = tot; }
 
   void status(int tot) {
-    if(tot != total_number_of_particles) {
+    if (tot != total_number_of_particles) {
       ckout << "[Error] Some particles were lost" << endl;
       CkExit();
     }
@@ -93,12 +91,12 @@ public:
 
 #define RAND_UPDATE(t)                                                         \
   if (direction()) {                                                           \
-    float temp_##t = store[j].t +                                              \
-                 static_cast<float>(rand() / static_cast<float>(RAND_MAX));    \
+    float temp_##t = store[j].t + static_cast<float>(                          \
+                                      rand() / static_cast<float>(RAND_MAX));  \
     store[j].t = temp_##t > 100.0 ? 100.0 : temp_##t;                          \
   } else {                                                                     \
-    float temp_##t = store[j].t -                                              \
-                 static_cast<float>(rand() / static_cast<float>(RAND_MAX));    \
+    float temp_##t = store[j].t - static_cast<float>(                          \
+                                      rand() / static_cast<float>(RAND_MAX));  \
     store[j].t = temp_##t < 0.0 ? 0.0 : temp_##t;                              \
   }
 
@@ -106,10 +104,10 @@ public:
         int size_of_chare)
       : startProxy(startProxy), row_size(row_size) {
     int num_elems;
-    if(CkMyPe() % 5 == 0) {
-        num_elems = num_elems_per_chare * 2;
+    if (CkMyPe() % 5 == 0) {
+      num_elems = num_elems_per_chare * 2;
     } else {
-        num_elems = num_elems_per_chare;
+      num_elems = num_elems_per_chare;
     }
     lowx = thisIndex.x * size_of_chare;
     lowy = thisIndex.y * size_of_chare;
@@ -217,14 +215,14 @@ public:
     recv_count[curr_stage] = 0;
     curr_stage++;
     if (curr_stage == 100) {
-      for(auto it : store) {
-        if(it.x < 0.0 or it.x > 100.0 or it.y < 0.0 or it.y > 100.0) {
+      for (auto it : store) {
+        if (it.x < 0.0 or it.x > 100.0 or it.y < 0.0 or it.y > 100.0) {
           ckout << "[Error] Particle out of bounds" << endl;
           CkExit();
         }
       }
       startProxy.fini();
-    } else if(curr_stage % 10 == 0) {
+    } else if (curr_stage % 10 == 0) {
       // check correctness and load balance after every 10 stages
       int tot = store.size();
       CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
