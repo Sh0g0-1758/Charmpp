@@ -1,6 +1,7 @@
 mainmodule particle {
     mainchare start {
         entry start(CkArgMsg* m);
+        entry [reductiontarget] void init(int tot);
         entry [reductiontarget] void status(int tot);
         entry void fini();
     };

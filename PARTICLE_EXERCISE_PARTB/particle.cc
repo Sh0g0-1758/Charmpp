@@ -3,6 +3,8 @@
 #include <random>
 #include <utility>
 #include <vector>
+#include <ctime>
+#include <cstdlib>
 
 #define NUM_ITERATIONS 100
 
@@ -14,6 +16,7 @@ private:
   CProxy_boxes boxesArray;
   int chare_done = 0;
   std::map<int, int> stage_check;
+  int total_number_of_particles = 0;
 
 public:
   start(CkArgMsg *msg) {
@@ -31,8 +34,12 @@ public:
     boxesArray.start();
   }
 
+  void init(int tot) {
+    total_number_of_particles = tot;
+  }
+
   void status(int tot) {
-    if(tot != (num_elems_per_chare * (row_size * row_size + std::ceil((row_size * row_size) * 1.0 / 5)))) {
+    if(tot != total_number_of_particles) {
       ckout << "[Error] Some particles were lost" << endl;
       CkExit();
     }
@@ -48,15 +55,13 @@ public:
   }
 };
 
+struct point {
+  float x;
+  float y;
+};
+
 class boxes : public CBase_boxes {
 private:
-  int num_elems;
-
-  struct point {
-    float x;
-    float y;
-  };
-
   std::vector<point> store;
   std::map<int, std::vector<point>> buff_store;
   std::map<int, int> recv_count;
@@ -68,7 +73,7 @@ private:
   int highx;
   int lowy;
   int highy;
-  int size_of_chare;
+  bool done_with_curr_stage = false;
 
   int seed;
 
@@ -99,8 +104,8 @@ public:
 
   boxes(CProxy_start startProxy, int num_elems_per_chare, int row_size,
         int size_of_chare)
-      : startProxy(startProxy), row_size(row_size),
-        size_of_chare(size_of_chare) {
+      : startProxy(startProxy), row_size(row_size) {
+    int num_elems;
     if(CkMyPe() % 5 == 0) {
         num_elems = num_elems_per_chare * 2;
     } else {
@@ -128,13 +133,16 @@ public:
     seed = thisIndex.x * row_size + thisIndex.y;
     for (int i = 0; i < num_elems; i++)
       store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy)});
+
+    CkCallback cbcnt(CkReductionTarget(start, init), startProxy);
+    contribute(sizeof(int), &num_elems, CkReduction::sum_int, cbcnt);
   }
 
   void start() {
     srand(time(0));
     for (int j = 0; j < store.size(); j++) {
-      RAND_UPDATE(x);
       RAND_UPDATE(y);
+      RAND_UPDATE(x);
     }
 
     for (auto it = store.begin(); it != store.end();) {
@@ -174,7 +182,7 @@ public:
           continue;
         }
         std::vector<point> data = to_send[{thisIndex.x + i, thisIndex.y + j}];
-        float *arr = (float *)malloc(2 * data.size() * sizeof(float));
+        float arr[2 * data.size()];
         for (int i = 0; i < data.size(); i++) {
           arr[2 * i] = data[i].x;
           arr[(2 * i) + 1] = data[i].y;
@@ -184,6 +192,10 @@ public:
       }
     }
     to_send.clear();
+    done_with_curr_stage = true;
+    if (recv_count[curr_stage] == target_recv) {
+      update();
+    }
   }
 
   void receiver(int stage, float data[], int size) {
@@ -191,32 +203,37 @@ public:
       buff_store[stage].push_back({data[i], data[i + 1]});
     }
     recv_count[stage]++;
-    if (recv_count[curr_stage] == target_recv) {
-      for (auto it : buff_store[curr_stage]) {
-        store.push_back(it);
-      }
-      buff_store[curr_stage].clear();
-      recv_count[curr_stage] = 0;
-      curr_stage++;
-      if (curr_stage == 100) {
-        for(auto it : store) {
-          if(it.x < 0.0 or it.x > 100.0 or it.y < 0.0 or it.y > 100.0) {
-            ckout << "[Error] Particle out of bounds" << endl;
-            CkExit();
-          }
+    if (done_with_curr_stage && recv_count[curr_stage] == target_recv) {
+      update();
+    }
+  }
+
+  void update() {
+    done_with_curr_stage = false;
+    for (auto it : buff_store[curr_stage]) {
+      store.push_back(it);
+    }
+    buff_store[curr_stage].clear();
+    recv_count[curr_stage] = 0;
+    curr_stage++;
+    if (curr_stage == 100) {
+      for(auto it : store) {
+        if(it.x < 0.0 or it.x > 100.0 or it.y < 0.0 or it.y > 100.0) {
+          ckout << "[Error] Particle out of bounds" << endl;
+          CkExit();
         }
-        startProxy.fini();
-      } else if(curr_stage % 10 == 0) {
-        // check correctness after every 10 stages
-        int tot = store.size();
-        CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
-        contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
-        start();
-      } else {
-        // start the next stage as the current chare has all the updated data
-        // that it needs.
-        start();
       }
+      startProxy.fini();
+    } else if(curr_stage % 10 == 0) {
+      // check correctness and load balance after every 10 stages
+      int tot = store.size();
+      CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
+      contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
+      start();
+    } else {
+      // start the next stage as the current chare has all the updated data
+      // that it needs.
+      start();
     }
   }
 };
