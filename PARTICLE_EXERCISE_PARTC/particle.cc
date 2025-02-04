@@ -3,6 +3,8 @@
 #include <random>
 #include <utility>
 #include <vector>
+#include <ctime>
+#include <cstdlib>
 #include <pup_stl.h>
 
 #define NUM_ITERATIONS 100
@@ -95,12 +97,12 @@ public:
 
   float gen_rand(int start, int end) {
     std::mt19937_64 gen(seed);
-    seed += seed;
+    seed++;
     std::uniform_real_distribution<float> dis(start, end);
     return dis(gen);
   }
 
-  bool direction() { return (rand() / RAND_MAX > 0.5); }
+  bool direction() { return rand() % 2; }
 
 #define RAND_UPDATE(t)                                                         \
   if (direction()) {                                                           \
@@ -142,15 +144,16 @@ public:
       target_recv = 8;
     }
     // RANDOM SEED
-    seed = thisIndex.x * row_size + thisIndex.y + 42;
+    seed = thisIndex.x * row_size + thisIndex.y;
     for (int i = 0; i < num_elems; i++)
       store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy)});
   }
 
   void start() {
+    srand(time(0));
     for (int j = 0; j < store.size(); j++) {
-      RAND_UPDATE(x);
       RAND_UPDATE(y);
+      RAND_UPDATE(x);
     }
 
     for (auto it = store.begin(); it != store.end();) {
@@ -192,8 +195,8 @@ public:
         std::vector<point> data = to_send[{thisIndex.x + i, thisIndex.y + j}];
         float *arr = (float *)malloc(2 * data.size() * sizeof(float));
         for (int i = 0; i < data.size(); i++) {
-          arr[i] = data[i].x;
-          arr[i + 1] = data[i].y;
+          arr[2 * i] = data[i].x;
+          arr[(2 * i) + 1] = data[i].y;
         }
         thisProxy(thisIndex.x + i, thisIndex.y + j)
             .receiver(curr_stage, arr, 2 * data.size());
@@ -216,7 +219,10 @@ public:
       curr_stage++;
       if (curr_stage == 100) {
         for(auto it : store) {
-          ckout << it.x << " " << it.y << endl;
+          if(it.x < 0.0 or it.x > 100.0 or it.y < 0.0 or it.y > 100.0) {
+            ckout << "[Error] Particle out of bounds" << endl;
+            CkExit();
+          }
         }
         startProxy.fini();
       } else if(curr_stage % 10 == 0) {
@@ -224,8 +230,7 @@ public:
         int tot = store.size();
         CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
         contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
-        start();
-        // AtSync();
+        AtSync();
       } else {
         // start the next stage as the current chare has all the updated data
         // that it needs.
