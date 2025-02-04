@@ -40,8 +40,6 @@ public:
   }
 
   void status(int tot) {
-    ckout << "INITIAL: " << total_number_of_particles << endl;
-    ckout << "FINAL: " << tot << endl;
     if(tot != total_number_of_particles) {
       ckout << "[Error] Some particles were lost" << endl;
       CkExit();
@@ -81,6 +79,7 @@ private:
   int highx;
   int lowy;
   int highy;
+  bool done_with_curr_stage = false;
 
   int seed;
 
@@ -101,6 +100,7 @@ public:
     p|recv_count;
     p|to_send;
     p|startProxy;
+    p|done_with_curr_stage;
   }
 
   boxes(CkMigrateMessage *msg) {}
@@ -216,6 +216,10 @@ public:
       }
     }
     to_send.clear();
+    done_with_curr_stage = true;
+    if (recv_count[curr_stage] == target_recv) {
+      update();
+    }
   }
 
   void receiver(int stage, float data[], int size) {
@@ -223,38 +227,41 @@ public:
       buff_store[stage].push_back({data[i], data[i + 1]});
     }
     recv_count[stage]++;
-    if (recv_count[curr_stage] == target_recv) {
-      for (auto it : buff_store[curr_stage]) {
-        store.push_back(it);
-      }
-      buff_store[curr_stage].clear();
-      recv_count[curr_stage] = 0;
-      curr_stage++;
-      if (curr_stage == 100) {
-        for(auto it : store) {
-          if(it.x < 0.0 or it.x > 100.0 or it.y < 0.0 or it.y > 100.0) {
-            ckout << "[Error] Particle out of bounds" << endl;
-            CkExit();
-          }
-        }
-        startProxy.fini();
-      } else if(curr_stage % 10 == 0) {
-        // check correctness and load balance after every 10 stages
-        AtSync();
-      } else {
-        // start the next stage as the current chare has all the updated data
-        // that it needs.
-        start();
-      }
+    if (done_with_curr_stage && recv_count[curr_stage] == target_recv) {
+      update();
     }
   }
 
-  void ResumeFromSync() {
-    int tot = store.size();
-    CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
-    contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
-    start();
+  void update() {
+    done_with_curr_stage = false;
+    for (auto it : buff_store[curr_stage]) {
+      store.push_back(it);
+    }
+    buff_store[curr_stage].clear();
+    recv_count[curr_stage] = 0;
+    curr_stage++;
+    if (curr_stage == 100) {
+      for(auto it : store) {
+        if(it.x < 0.0 or it.x > 100.0 or it.y < 0.0 or it.y > 100.0) {
+          ckout << "[Error] Particle out of bounds" << endl;
+          CkExit();
+        }
+      }
+      startProxy.fini();
+    } else if(curr_stage % 10 == 0) {
+      // check correctness and load balance after every 10 stages
+      int tot = store.size();
+      CkCallback cbcnt(CkReductionTarget(start, status), startProxy);
+      contribute(sizeof(int), &tot, CkReduction::sum_int, cbcnt);
+      AtSync();
+    } else {
+      // start the next stage as the current chare has all the updated data
+      // that it needs.
+      start();
+    }
   }
+
+  void ResumeFromSync() { start(); }
 };
 
 #include "particle.def.h"
