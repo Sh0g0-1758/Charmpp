@@ -17,6 +17,7 @@ private:
   CProxy_boxes boxesArray;
   int chare_done = 0;
   std::map<int, int> stage_check;
+  int total_number_of_particles = 0;
 
 public:
   start(CkArgMsg *msg) {
@@ -34,8 +35,14 @@ public:
     boxesArray.start();
   }
 
+  void init(int tot) {
+    total_number_of_particles = tot;
+  }
+
   void status(int tot) {
-    if(tot != (num_elems_per_chare * (row_size * row_size + std::ceil((row_size * row_size) * 1.0 / 5)))) {
+    ckout << "INITIAL: " << total_number_of_particles << endl;
+    ckout << "FINAL: " << tot << endl;
+    if(tot != total_number_of_particles) {
       ckout << "[Error] Some particles were lost" << endl;
       CkExit();
     }
@@ -150,6 +157,9 @@ public:
     seed = thisIndex.x * row_size + thisIndex.y;
     for (int i = 0; i < num_elems; i++)
       store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy)});
+
+    CkCallback cbcnt(CkReductionTarget(start, init), startProxy);
+    contribute(sizeof(int), &num_elems, CkReduction::sum_int, cbcnt);
   }
 
   void start() {
@@ -209,8 +219,6 @@ public:
   }
 
   void receiver(int stage, float data[], int size) {
-    ckout << "Stage: " << stage << " Chare: " << thisIndex.x << " "
-          << thisIndex.y << endl;
     for (int i = 0; i < size; i += 2) {
       buff_store[stage].push_back({data[i], data[i + 1]});
     }
