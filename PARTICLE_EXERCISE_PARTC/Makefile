@@ -6,4 +6,4 @@ build:
 	@echo "Build complete"
 
 run:
-	./charmrun +p10 ./particle 10000 16 +balancer GreedyLB
+	./charmrun +p20 ./particle 10000 16 +balancer GreedyLB

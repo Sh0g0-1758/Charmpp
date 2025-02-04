@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-#define NUM_ITERATIONS 100
+#define NUM_ITERATIONS 1000
 
 class start : public CBase_start {
 private:
@@ -17,8 +17,8 @@ private:
   int row_size;
   CProxy_boxes boxesArray;
   int chare_done = 0;
-  std::map<int, int> stage_check;
   int total_number_of_particles = 0;
+  int stages_done = 0;
 
 public:
   start(CkArgMsg *msg) {
@@ -31,8 +31,16 @@ public:
     delete msg;
     row_size = ceil(100.0 / size_of_chare);
 
+    CkArrayOptions opts(row_size, row_size);
     boxesArray = CProxy_boxes::ckNew(thisProxy, num_elems_per_chare, row_size,
-                                     size_of_chare, row_size, row_size);
+                                     size_of_chare, opts);
+    
+    // setup liveviz
+    CkCallback cbk(CkIndex_boxes::colorme(0),boxesArray);
+    liveVizConfig cfg(liveVizConfig::pix_color,true);
+    liveVizInit(cfg,boxesArray,cbk, opts);
+
+    
     boxesArray.start();
   }
 
@@ -42,6 +50,9 @@ public:
     if (tot != total_number_of_particles) {
       ckout << "[Error] Some particles were lost" << endl;
       CkExit();
+    } else {
+      ckout << "[STATUS] Done with stage " << stages_done << endl;
+      stages_done+=10;
     }
   }
 
@@ -58,11 +69,13 @@ public:
 struct point {
   float x;
   float y;
+  int color; // 0 for blue, 1 for red
 };
 
 inline void operator|(PUP::er &p, point &c) {
   p | c.x;
   p | c.y;
+  p | c.color;
 }
 
 class boxes : public CBase_boxes {
@@ -79,6 +92,7 @@ private:
   int lowy;
   int highy;
   bool done_with_curr_stage = false;
+  int size_of_chare;
 
   int seed;
 
@@ -103,6 +117,7 @@ public:
     p | to_send;
     p | startProxy;
     p | done_with_curr_stage;
+    p | size_of_chare;
   }
 
   boxes(CkMigrateMessage *msg) {}
@@ -129,7 +144,7 @@ public:
 
   boxes(CProxy_start startProxy, int num_elems_per_chare, int row_size,
         int size_of_chare)
-      : startProxy(startProxy), row_size(row_size) {
+      : startProxy(startProxy), row_size(row_size), size_of_chare(size_of_chare) {
     usesAtSync = true;
     int num_elems;
     if (CkMyPe() % 5 == 0) {
@@ -157,8 +172,17 @@ public:
     }
     // RANDOM SEED
     seed = thisIndex.x * row_size + thisIndex.y;
-    for (int i = 0; i < num_elems; i++)
-      store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy)});
+    // overloaded processors have 80% red particles and 20% blue particles
+    // others have 80% blue particles and 20% red particles
+    for (int i = 0; i < num_elems; i++) {
+      if(CkMyPe() % 5 == 0) {
+        if(i < ((num_elems * 4) / 5)) store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 1});
+        else store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 0});
+      } else {
+        if(i < ((num_elems * 4) / 5)) store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 0});
+        else store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 1});
+      }
+    }
 
     CkCallback cbcnt(CkReductionTarget(start, init), startProxy);
     contribute(sizeof(int), &num_elems, CkReduction::sum_int, cbcnt);
@@ -242,7 +266,7 @@ public:
     buff_store[curr_stage].clear();
     recv_count[curr_stage] = 0;
     curr_stage++;
-    if (curr_stage == 100) {
+    if (curr_stage == NUM_ITERATIONS) {
       for (auto it : store) {
         if (it.x < 0.0 or it.x > 100.0 or it.y < 0.0 or it.y > 100.0) {
           ckout << "[Error] Particle out of bounds" << endl;
@@ -266,7 +290,65 @@ public:
   void ResumeFromSync() { start(); }
 
   void colorme (liveVizRequestMsg *m) {
-    // liveVizDeposit (m, startX, startY, width, height, imageBuff, this);
+    unsigned char *intensity;
+    intensity = new unsigned char[3 * size_of_chare * size_of_chare];
+
+    int sx=thisIndex.x*size_of_chare;
+    int sy=thisIndex.y*size_of_chare;
+    int w=size_of_chare;
+    int h=size_of_chare;
+    
+    // so we divide our store vector in a grid of size size_of_chare*size_of_chare
+    // and decide the color of each pixel by studying whether it has more red or blue particles
+    int color_pixel[size_of_chare*size_of_chare];
+    int bracket = store.size()/(size_of_chare*size_of_chare);
+    for(int i = 0; i < store.size(); i+=bracket) {
+      int red = 0;
+      int blue = 0;
+      for(int j = 0; j < bracket; j++) {
+        if(store[i+j].color == 1) {
+          red++;
+        } else {
+          blue++;
+        }
+      }
+      if(red > blue) {
+        color_pixel[i/bracket] = 1;
+      } else {
+        color_pixel[i/bracket] = 0;
+      }
+    }
+    for(int i=0;i<size_of_chare;++i){
+      for(int j=0;j<size_of_chare;++j){
+
+        int color = color_pixel[i*size_of_chare+j];
+        	
+        if(color == 1) { // red
+          intensity[3*(i*w+j)+0] = 255; // RED component
+          intensity[3*(i*w+j)+1] = 0; // GREEN component
+          intensity[3*(i*w+j)+2] = 0; // BLUE component
+        } else { // blue
+          intensity[3*(i*w+j)+0] = 0; // RED component
+          intensity[3*(i*w+j)+1] = 0; // GREEN component
+          intensity[3*(i*w+j)+2] = 255; // BLUE component
+        }
+      }
+    }
+    
+    // Draw a green border on right and bottom of this chare array's pixel buffer
+    for(int i=0;i<h;++i){
+      intensity[3*(i*w+w-1)+0] = 0;     // RED component
+      intensity[3*(i*w+w-1)+1] = 255;   // GREEN component
+      intensity[3*(i*w+w-1)+2] = 0;     // BLUE component
+    }
+    for(int i=0;i<w;++i){
+      intensity[3*((h-1)*w+i)+0] = 0;   // RED component
+      intensity[3*((h-1)*w+i)+1] = 255; // GREEN component
+      intensity[3*((h-1)*w+i)+2] = 0;   // BLUE component
+    }
+
+    liveVizDeposit(m, sx,sy, w,h, intensity, this);
+    free(intensity);
   }
 };
 
