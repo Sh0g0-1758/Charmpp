@@ -8,7 +8,8 @@
 #include <utility>
 #include <vector>
 
-#define NUM_ITERATIONS 1000
+#define NUM_ITERATIONS 100
+#define DIMENSION 100.0
 
 class start : public CBase_start {
 private:
@@ -18,7 +19,7 @@ private:
   CProxy_boxes boxesArray;
   int chare_done = 0;
   int total_number_of_particles = 0;
-  int stages_done = 0;
+  int stages_done = 10;
 
 public:
   start(CkArgMsg *msg) {
@@ -29,7 +30,7 @@ public:
     num_elems_per_chare = atoi(msg->argv[1]);
     size_of_chare = atoi(msg->argv[2]);
     delete msg;
-    row_size = ceil(100.0 / size_of_chare);
+    row_size = ceil(DIMENSION / size_of_chare);
 
     CkArrayOptions opts(row_size, row_size);
     boxesArray = CProxy_boxes::ckNew(thisProxy, num_elems_per_chare, row_size,
@@ -40,7 +41,6 @@ public:
     liveVizConfig cfg(liveVizConfig::pix_color,true);
     liveVizInit(cfg,boxesArray,cbk, opts);
 
-    
     boxesArray.start();
   }
 
@@ -48,7 +48,7 @@ public:
 
   void status(int tot) {
     if (tot != total_number_of_particles) {
-      ckout << "[Error] Some particles were lost" << endl;
+      ckout << "[ERROR] Some particles were lost" << endl;
       CkExit();
     } else {
       ckout << "[STATUS] Done with stage " << stages_done << endl;
@@ -59,8 +59,9 @@ public:
   void fini() {
     chare_done++;
     if (chare_done == row_size * row_size) {
-      ckout << "[Success] All particles were accounted for" << endl;
-      ckout << "Simulation finished" << endl;
+      ckout << "[STATUS] Done with stage " << stages_done << endl;
+      ckout << "[SUCCESS] All particles were accounted for" << endl;
+      ckout << "[STATUS] Simulation finished" << endl;
       CkExit();
     }
   }
@@ -135,7 +136,7 @@ public:
   if (direction()) {                                                           \
     float temp_##t = store[j].t + static_cast<float>(                          \
                                       rand() / static_cast<float>(RAND_MAX));  \
-    store[j].t = temp_##t > 100.0 ? 100.0 : temp_##t;                          \
+    store[j].t = temp_##t > DIMENSION ? DIMENSION : temp_##t;                  \
   } else {                                                                     \
     float temp_##t = store[j].t - static_cast<float>(                          \
                                       rand() / static_cast<float>(RAND_MAX));  \
@@ -154,8 +155,8 @@ public:
     }
     lowx = thisIndex.x * size_of_chare;
     lowy = thisIndex.y * size_of_chare;
-    highx = lowx + size_of_chare > 100.0 ? 100.0 : lowx + size_of_chare;
-    highy = lowy + size_of_chare > 100.0 ? 100.0 : lowy + size_of_chare;
+    highx = lowx + size_of_chare > DIMENSION ? DIMENSION : lowx + size_of_chare;
+    highy = lowy + size_of_chare > DIMENSION ? DIMENSION : lowy + size_of_chare;
     // Check if point is on corner
     if ((thisIndex.x == 0 || thisIndex.x == row_size - 1) &&
         (thisIndex.y == 0 || thisIndex.y == row_size - 1)) {
@@ -173,14 +174,14 @@ public:
     // RANDOM SEED
     seed = thisIndex.x * row_size + thisIndex.y;
     // overloaded processors have 80% red particles and 20% blue particles
-    // others have 80% blue particles and 20% red particles
+    // others have 50% blue particles and 50% red particles
     for (int i = 0; i < num_elems; i++) {
       if(CkMyPe() % 5 == 0) {
         if(i < ((num_elems * 4) / 5)) store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 1});
         else store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 0});
       } else {
-        if(i < ((num_elems * 4) / 5)) store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 0});
-        else store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 1});
+        if(i < (num_elems / 2)) store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 1});
+        else store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 0});
       }
     }
 
@@ -268,7 +269,7 @@ public:
     curr_stage++;
     if (curr_stage == NUM_ITERATIONS) {
       for (auto it : store) {
-        if (it.x < 0.0 or it.x > 100.0 or it.y < 0.0 or it.y > 100.0) {
+        if (it.x < 0.0 or it.x > DIMENSION or it.y < 0.0 or it.y > DIMENSION) {
           ckout << "[Error] Particle out of bounds" << endl;
           CkExit();
         }
@@ -302,7 +303,9 @@ public:
     // and decide the color of each pixel by studying whether it has more red or blue particles
     int color_pixel[size_of_chare*size_of_chare];
     int bracket = store.size()/(size_of_chare*size_of_chare);
+    int box = 0;
     for(int i = 0; i < store.size(); i+=bracket) {
+      if(box == size_of_chare*size_of_chare) break;
       int red = 0;
       int blue = 0;
       for(int j = 0; j < bracket; j++) {
@@ -312,11 +315,27 @@ public:
           blue++;
         }
       }
-      if(red > blue) {
-        color_pixel[i/bracket] = 1;
+
+      if(bracket != 0) {
+        if(red > blue) {
+          color_pixel[box] = 1;
+        } else if (red < blue) {
+          color_pixel[box] = 0;
+        } else {
+          if(box%2 == 0) {
+            color_pixel[box] = 1;
+          } else {
+            color_pixel[box] = 0;
+          }
+        }
       } else {
-        color_pixel[i/bracket] = 0;
+        if(store[i].color == 1) {
+          color_pixel[i] = 1;
+        } else {
+          color_pixel[i] = 0;
+        }
       }
+    box++;
     }
     for(int i=0;i<size_of_chare;++i){
       for(int j=0;j<size_of_chare;++j){
