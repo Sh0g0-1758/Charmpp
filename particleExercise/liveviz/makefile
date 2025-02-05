@@ -1,4 +1,4 @@
-CHARMC=charmc -module liveViz $(OPTS) -g -I/home/anant/winter2024/kale/study/charm/src/libs/ck-libs/liveViz
+CHARMC=charmc -module liveViz -module EveryLB $(OPTS) -g -I/home/anant/winter2024/kale/study/charm/src/libs/ck-libs/liveViz
 
 OBJS = particle.o
 

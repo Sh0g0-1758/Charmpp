@@ -49,7 +49,7 @@ ParticleGrid::ParticleGrid(CProxy_Main m, int sizeX, int sizeY){
     x2 = (thisIndex.x+1)*(1.f/sizeX);
     y1 = thisIndex.y*(1.f/sizeY);
     y2 = (thisIndex.y+1)*(1.f/sizeY);
-    intensity = new unsigned char[3*numPix*numPix];
+    // intensity = new unsigned char[3*numPix*numPix];
     for(int i=0;i<numPoints;i++){
         
         double x = x1 + drand48()*(x2-x1);
@@ -152,10 +152,15 @@ void ParticleGrid::recv(double* coordsRecv, int size){
         coords.push_back(coordinate{coordsRecv[i],coordsRecv[i+1],coordsRecv[i+2]});
     }
     if(recvCount==9){
+        if(++epoch%10==0){
+            AtSync();
+        }
+        else{
         recvCount=0;
         numPoints = coords.size();
         CkCallback cb(CkReductionTarget(Main,getTotal),main);
         contribute(sizeof(int), &numPoints, CkReduction::sum_int, cb);
+        }
     }
 }
 
@@ -169,7 +174,7 @@ void ParticleGrid::ResumeFromSync(){
 void ParticleGrid::getImage(liveVizRequestMsg *m){
     int pixStartX = thisIndex.x*numPix;
     int pixStartY = thisIndex.y*numPix;
-    // int max = -1;
+    unsigned char* intensity = new unsigned char[3*numPix*numPix];
     for(int i=0;i<3*numPix*numPix;i++){
         intensity[i] = 0;
     }
