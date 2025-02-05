@@ -7,8 +7,9 @@
 #include <random>
 #include <utility>
 #include <vector>
+#include <cstring>
 
-#define NUM_ITERATIONS 100
+#define NUM_ITERATIONS 1000
 #define DIMENSION 100.0
 
 class start : public CBase_start {
@@ -70,7 +71,7 @@ public:
 struct point {
   float x;
   float y;
-  int color; // 0 for blue, 1 for red
+  float color;
 };
 
 inline void operator|(PUP::er &p, point &c) {
@@ -174,14 +175,14 @@ public:
     // RANDOM SEED
     seed = thisIndex.x * row_size + thisIndex.y;
     // overloaded processors have 80% red particles and 20% blue particles
-    // others have 50% blue particles and 50% red particles
+    // others have 80% blue particles and 80% red particles
     for (int i = 0; i < num_elems; i++) {
       if(CkMyPe() % 5 == 0) {
-        if(i < ((num_elems * 4) / 5)) store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 1});
+        if(i < ((num_elems * 9) / 10)) store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 1});
         else store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 0});
       } else {
-        if(i < (num_elems / 2)) store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 1});
-        else store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 0});
+        if(i < ((num_elems * 9) / 10)) store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 0});
+        else store.push_back({gen_rand(lowx, highx), gen_rand(lowy, highy), 1});
       }
     }
 
@@ -233,13 +234,14 @@ public:
           continue;
         }
         std::vector<point> data = to_send[{thisIndex.x + i, thisIndex.y + j}];
-        float arr[2 * data.size()];
+        float arr[3 * data.size()];
         for (int i = 0; i < data.size(); i++) {
-          arr[2 * i] = data[i].x;
-          arr[(2 * i) + 1] = data[i].y;
+          arr[3 * i] = data[i].x;
+          arr[(3 * i) + 1] = data[i].y;
+          arr[(3 * i) + 2] = data[i].color;
         }
         thisProxy(thisIndex.x + i, thisIndex.y + j)
-            .receiver(curr_stage, arr, 2 * data.size());
+            .receiver(curr_stage, arr, 3 * data.size());
       }
     }
     to_send.clear();
@@ -250,8 +252,8 @@ public:
   }
 
   void receiver(int stage, float data[], int size) {
-    for (int i = 0; i < size; i += 2) {
-      buff_store[stage].push_back({data[i], data[i + 1]});
+    for (int i = 0; i < size; i += 3) {
+      buff_store[stage].push_back({data[i], data[i + 1], data[i + 2]});
     }
     recv_count[stage]++;
     if (done_with_curr_stage && recv_count[curr_stage] == target_recv) {
@@ -290,85 +292,48 @@ public:
 
   void ResumeFromSync() { start(); }
 
-  void colorme (liveVizRequestMsg *m) {
-    unsigned char *intensity;
-    intensity = new unsigned char[3 * size_of_chare * size_of_chare];
-
-    int sx=thisIndex.x*size_of_chare;
-    int sy=thisIndex.y*size_of_chare;
-    int w=size_of_chare;
-    int h=size_of_chare;
+void colorme(liveVizRequestMsg *m) {
+    const int IMAGE_SIZE = 100;
+    unsigned char *intensity = new unsigned char[3 * IMAGE_SIZE * IMAGE_SIZE];
+    // Initialize all pixels to black
+    std::memset(intensity, 0, 3 * IMAGE_SIZE * IMAGE_SIZE);
     
-    // so we divide our store vector in a grid of size size_of_chare*size_of_chare
-    // and decide the color of each pixel by studying whether it has more red or blue particles
-    int color_pixel[size_of_chare*size_of_chare];
-    int bracket = store.size()/(size_of_chare*size_of_chare);
-    int box = 0;
-    for(int i = 0; i < store.size(); i+=bracket) {
-      if(box == size_of_chare*size_of_chare) break;
-      int red = 0;
-      int blue = 0;
-      for(int j = 0; j < bracket; j++) {
-        if(store[i+j].color == 1) {
-          red++;
-        } else {
-          blue++;
-        }
-      }
+    int sx = thisIndex.x * IMAGE_SIZE;
+    int sy = thisIndex.y * IMAGE_SIZE;
 
-      if(bracket != 0) {
-        if(red > blue) {
-          color_pixel[box] = 1;
-        } else if (red < blue) {
-          color_pixel[box] = 0;
-        } else {
-          if(box%2 == 0) {
-            color_pixel[box] = 1;
-          } else {
-            color_pixel[box] = 0;
-          }
+    std::vector<std::vector<int>> redDensity(IMAGE_SIZE, std::vector<int>(IMAGE_SIZE, 0));
+    std::vector<std::vector<int>> blueDensity(IMAGE_SIZE, std::vector<int>(IMAGE_SIZE, 0));
+
+    for(const auto& particle : store) {
+        int px = static_cast<int>((particle.x - lowx) * IMAGE_SIZE / size_of_chare);
+        int py = static_cast<int>((particle.y - lowy) * IMAGE_SIZE / size_of_chare);
+
+        if(px >= 0 && px < IMAGE_SIZE && py >= 0 && py < IMAGE_SIZE) {
+            if(particle.color == 1) {
+                redDensity[py][px]++;
+            } else {
+                blueDensity[py][px]++;
+            }
         }
-      } else {
-        if(store[i].color == 1) {
-          color_pixel[i] = 1;
-        } else {
-          color_pixel[i] = 0;
-        }
-      }
-    box++;
     }
-    for(int i=0;i<size_of_chare;++i){
-      for(int j=0;j<size_of_chare;++j){
 
-        int color = color_pixel[i*size_of_chare+j];
-        	
-        if(color == 1) { // red
-          intensity[3*(i*w+j)+0] = 255; // RED component
-          intensity[3*(i*w+j)+1] = 0; // GREEN component
-          intensity[3*(i*w+j)+2] = 0; // BLUE component
-        } else { // blue
-          intensity[3*(i*w+j)+0] = 0; // RED component
-          intensity[3*(i*w+j)+1] = 0; // GREEN component
-          intensity[3*(i*w+j)+2] = 255; // BLUE component
+    for(int i = 0; i < IMAGE_SIZE; i++) {
+        for(int j = 0; j < IMAGE_SIZE; j++) {
+            int idx = 3 * (i * IMAGE_SIZE + j);
+            float totalDensity = redDensity[i][j] + blueDensity[i][j];
+
+            float redIntensity = redDensity[i][j] / totalDensity;
+            float blueIntensity = blueDensity[i][j] / totalDensity;
+
+            intensity[idx + 0] = static_cast<unsigned char>(255 * redIntensity); // Red
+            intensity[idx + 1] = 0;
+            intensity[idx + 2] = static_cast<unsigned char>(255 * blueIntensity); // Blue
         }
-      }
     }
     
-    // Draw a green border on right and bottom of this chare array's pixel buffer
-    for(int i=0;i<h;++i){
-      intensity[3*(i*w+w-1)+0] = 0;     // RED component
-      intensity[3*(i*w+w-1)+1] = 255;   // GREEN component
-      intensity[3*(i*w+w-1)+2] = 0;     // BLUE component
-    }
-    for(int i=0;i<w;++i){
-      intensity[3*((h-1)*w+i)+0] = 0;   // RED component
-      intensity[3*((h-1)*w+i)+1] = 255; // GREEN component
-      intensity[3*((h-1)*w+i)+2] = 0;   // BLUE component
-    }
-
-    liveVizDeposit(m, sx,sy, w,h, intensity, this);
-    free(intensity);
-  }
+    liveVizDeposit(m, sx, sy, IMAGE_SIZE, IMAGE_SIZE, intensity, this);
+    delete[] intensity;
+}
 };
 
 #include "particle.def.h"
