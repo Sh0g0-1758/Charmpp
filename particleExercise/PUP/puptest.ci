@@ -1,0 +1,14 @@
+mainmodule puptest{
+    include "vector";
+    PUPable Coordinate;
+
+    mainchare Main{
+        entry Main(CkArgMsg* mgs);
+        entry [reductiontarget] void step();
+
+    };
+    array [1d] worker{
+        entry worker(CProxy_Main m);
+        entry void work(std::vector<Coordinate> &v);
+    };
+}
