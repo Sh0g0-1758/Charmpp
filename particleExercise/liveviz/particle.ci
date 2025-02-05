@@ -1,0 +1,14 @@
+mainmodule particle{
+    PUPable coordinate;
+    readonly double delta;
+    mainchare Main{
+        entry Main(CkArgMsg* mgs);
+        entry [reductiontarget] void getTotal(int total);
+    }
+    array [2d] ParticleGrid{
+        entry ParticleGrid(CProxy_Main m, int sizeX, int sizeY);
+        entry void step();
+        entry void recv(double coordsRecv[size],int size);
+        entry void getImage(liveVizRequestMsg *m);
+    }
+}
