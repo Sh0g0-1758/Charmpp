@@ -1,0 +1,23 @@
+mainmodule sort {
+    mainchare start {
+        entry start(CkArgMsg* m);
+        entry void fini(int indx, int elem);
+    };
+
+    array[1D] points {
+        entry points(CProxy_start startProxy, int arr[size], int size);
+        entry void recv() {
+            when comm(int indx, int elem, int stage) serial {
+                if(stage == curr_stage) {
+                    thisProxy[thisIndex].process(indx, elem);
+                } else {
+                    buffer = {indx, {elem, stage}};
+                    empty_buffer = false;
+                    thisProxy[thisIndex].recv();
+                }
+            }
+        }
+        entry void comm(int indx, int elem, int stage);
+        entry void process(int indx, int elem);
+    }
+};
