@@ -121,10 +121,7 @@ public:
 
         if(!empty_buffer) {
             empty_buffer = true;
-            if(curr_stage != buffer.second.second) {
-            } else {
-                process(buffer.first, buffer.second.first);
-            }
+            process(buffer.first, buffer.second.first);
         } else {
             if(curr_stage == size) {
                 startProxy.fini(thisIndex, curr_elem);
