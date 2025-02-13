@@ -1,3 +1,3 @@
 # Charm++
 
-Solutions to Exercises and Learnings from charm++, message-passing parallel language and runtime system. 
+Solutions to Exercises from the charm++ book. Charm++ is a message-passing parallel language and runtime system. 
