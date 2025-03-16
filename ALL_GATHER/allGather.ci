@@ -1,0 +1,11 @@
+mainmodule allGather {
+  mainchare start {
+    entry start(CkArgMsg * m);
+    entry[reductiontarget] void fini(int numDone);
+  };
+
+  array[1D] simBox {
+    entry simBox(CProxy_start startProxy, int k, int n);
+    entry void recv(int sender, int data[size], int size);
+  }
+};
