@@ -131,7 +131,6 @@ public:
   }
 
   void startGather(long int data[], int _, CkCallback cb) {
-    ckout << "INIT> Chare " << thisIndex << endl;
     numMsg++;
     this->cb = cb;
     for (int i = 0; i < k; i++) {
@@ -147,21 +146,19 @@ public:
   }
 
   void recv(int sender, long int data[], int _, double recvTime) {
-    ckout << "RECV> Chare " << thisIndex << " from " << sender << endl;
     numMsg++;
     for (int i = 0; i < k; i++) {
       store[k * sender + i] = data[i];
     }
     timeStamp = max(recvTime, timeStamp);
+    if (((thisIndex + 1) % n) != sender) {
+      thisProxy[(thisIndex + 1) % n]
+          .recv(sender, data, k, (timeStamp + alpha + beta * k * 8));
+      timeStamp += alpha;
+    }
     if (numMsg == n) {
       callbackMsg *msg = new callbackMsg(store);
       cb.send(msg);
-    } else {
-      if(((thisIndex + 1) % n) != sender) {
-        thisProxy[(thisIndex + 1) % n]
-            .recv(sender, data, k, (timeStamp + alpha + beta * k * 8));
-        timeStamp += alpha;
-      }
     }
   }
 };
