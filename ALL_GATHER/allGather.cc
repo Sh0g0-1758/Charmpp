@@ -18,6 +18,7 @@ private:
   int x;
   int y;
   CProxy_simBox sim;
+  CProxy_AllGather AllGather_array;
 public:
   start(CkArgMsg *msg) {
     if (msg->argc < 3) {
@@ -34,6 +35,10 @@ public:
     delete msg;
 
     sim = CProxy_simBox::ckNew(thisProxy, k, n, x, y, n);
+    CkArrayOptions opts(n);
+    opts.bindTo(sim);
+    AllGather_array = CProxy_AllGather::ckNew(k, n, sim, opts);
+    sim.start1(AllGather_array);
   }
 
   void fini(int numDone) {
@@ -51,15 +56,12 @@ private:
   int n;
   int x;
   int y;
-  long int* store;
-  int numMsg = 0;
-  double timeStamp = 0.0;
+  long int *data;
 
 public:
   simBox(CProxy_start startProxy, int k, int n, int x, int y)
       : startProxy(startProxy), k(k), n(n), x(x), y(y) {
-    store = (long int*)malloc(k * n * sizeof(long int));
-    long int data[k];
+    data = (long int *)malloc(k * sizeof(long int));
     long int max_serial = (1 << y) - 1;
     long int base = CkMyPe();
     while(max_serial > 0) {
@@ -68,28 +70,53 @@ public:
     }
     for(int i = 0; i < k; i++) {
       data[i] = base + i;
-      store[k * thisIndex + i] = data[i];
-    }
-    thisProxy((thisIndex + 1) % n).recv(thisIndex, data, k, (timeStamp + alpha + beta * k * 8));
-    timeStamp += alpha;
-  }
-
-  void recv(int sender, long int data[], int size, double recvTime) {
-    numMsg++;
-    for(int i = 0; i < size; i++) {
-      store[k * sender + i] = data[i];
-    }
-    timeStamp = max(recvTime, timeStamp);
-    if(numMsg == n - 1) {
-      free(store);
-      int cont = 1;
-      CkCallback cbfini(CkReductionTarget(start, fini), startProxy);
-      contribute(sizeof(int), &cont, CkReduction::sum_int, cbfini);
-    } else {
-      thisProxy((thisIndex + 1) % n).recv(sender, data, k, (timeStamp + alpha + beta * k * 8));
-      timeStamp += alpha;
     }
   }
+  void start1(CProxy_AllGather AllGather_array){
+    AllGather_array(thisIndex).allGather1(data, k, thisProxy);
+  }
+  void done(long int store[], int size) {
+    free(data);
+    int cont = 1;
+    CkCallback cbfini(CkReductionTarget(startProxy, fini), startProxy);
+    contribute(sizeof(int), &cont, CkReduction::sum_int, cbfini);
+}
 };
 
+
+class AllGather : public CBase_AllGather {
+  private:
+    int k;
+    int n;
+    long int* store;
+    int numMsg = 0;
+    double timeStamp = 0.0;
+    CProxy_simBox simBoxProxy;
+  
+  public:
+  AllGather(int k, int n, CProxy_simBox simBoxProxy):k(k), n(n), simBoxProxy(simBoxProxy) {
+    store = (long int*)malloc(k * n * sizeof(long int));
+  }
+  void allGather1(long int data[], int size){
+      for(int i=0;i<k;i++){
+        store[k * thisIndex + i] = data[i];
+      }
+      thisProxy((thisIndex + 1) % n).recv(thisIndex, data, k, (timeStamp + alpha + beta * k * 8));
+      timeStamp += alpha;
+    }
+  
+    void recv(int sender, long int data[], int size, double recvTime) {
+      numMsg++;
+      for(int i = 0; i < k; i++) {
+        store[k * sender + i] = data[i];
+      }
+      timeStamp = max(recvTime, timeStamp);
+      if(numMsg == n - 1) {
+        simBoxProxy(thisIndex).done(store, k * n);
+      } else {
+        thisProxy((thisIndex + 1) % n).recv(sender, data, k, (timeStamp + alpha + beta * k * 8));
+        timeStamp += alpha;
+      }
+    }
+  };
 #include "allGather.def.h"
