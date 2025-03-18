@@ -12,18 +12,30 @@ class start : public CBase_start {
 private:
   int n;
   int k;
+  int x;
+  int y;
   CProxy_simBox sim;
 public:
   start(CkArgMsg *msg) {
-    if (msg->argc != 3) {
-      ckout << "Usage: " << msg->argv[0] << " <n> <k>" << endl;
+    if (msg->argc < 3) {
+      ckout << "Usage: " << msg->argv[0] << " <chare_array_size> <num_data_points_per_chare_array_element> <num_bits_for_pe | default = 20> <num_bits_for_data_points | default = 30>" << endl;
       CkExit();
     }
     n = atoi(msg->argv[1]);
     k = atoi(msg->argv[2]);
+    if(msg->argc == 3) {
+      x = 20;
+      y = 30;
+    } else if(msg->argc == 4) {
+      x = atoi(msg->argv[3]);
+      y = 30;
+    } else {
+      x = atoi(msg->argv[3]);
+      y = atoi(msg->argv[4]);
+    }
     delete msg;
 
-    sim = CProxy_simBox::ckNew(thisProxy, k, n, n);
+    sim = CProxy_simBox::ckNew(thisProxy, k, n, x, y, n);
   }
 
   void fini(int numDone) {
@@ -39,36 +51,36 @@ private:
   CProxy_start startProxy;
   int k;
   int n;
-  std::vector<int> store;
-  int seed;
+  int x;
+  int y;
+  long int* store;
   int numMsg = 0;
 
 public:
-  int gen_rand() {
-    std::mt19937_64 gen(seed);
-    seed++;
-    std::uniform_int_distribution<int> dis(1, 10000000);
-    return dis(gen);
-  }
-
-  simBox(CProxy_start startProxy, int k, int n)
-      : startProxy(startProxy), k(k), n(n) {
-    seed = 42 + k * thisIndex;
-    store.resize(k * n);
-    int data[k];
+  simBox(CProxy_start startProxy, int k, int n, int x, int y)
+      : startProxy(startProxy), k(k), n(n), x(x), y(y) {
+    store = (long int*)malloc(k * n * sizeof(long int));
+    long int data[k];
+    long int max_serial = (1 << y) - 1;
+    long int base = CkMyPe();
+    while(max_serial > 0) {
+      base = base * 10;
+      max_serial = max_serial / 10;
+    }
     for(int i = 0; i < k; i++) {
-      data[i] = gen_rand();
+      data[i] = base + i;
       store[k * thisIndex + i] = data[i];
     }
     thisProxy((thisIndex + 1) % n).recv(thisIndex, data, k);
   }
 
-  void recv(int sender, int data[], int size) {
+  void recv(int sender, long int data[], int size) {
     numMsg++;
     for(int i = 0; i < size; i++) {
       store[k * sender + i] = data[i];
     }
     if(numMsg == n - 1) {
+      free(store);
       int cont = 1;
       CkCallback cbfini(CkReductionTarget(start, fini), startProxy);
       contribute(sizeof(int), &cont, CkReduction::sum_int, cbfini);

@@ -5,7 +5,7 @@ mainmodule allGather {
   };
 
   array[1D] simBox {
-    entry simBox(CProxy_start startProxy, int k, int n);
-    entry void recv(int sender, int data[size], int size);
+    entry simBox(CProxy_start startProxy, int k, int n, int x, int y);
+    entry void recv(int sender, long int data[size], int size);
   }
 };
