@@ -21,6 +21,12 @@ double beta;
 // the data to all the user chare array elements or is it better to have
 // one-to-one message passing from bound to user chare array ?
 
+class callbackMsg : public CMessage_callbackMsg {
+public:
+    long int *data;
+    callbackMsg(long int *d) :data(d) {}
+};
+
 class start : public CBase_start {
 private:
   int n;
@@ -49,9 +55,11 @@ public:
     delete msg;
 
     sim = CProxy_simBox::ckNew(thisProxy, k, n, x, y, n);
+
     CkArrayOptions opts(n);
     opts.bindTo(sim);
-    AllGather_array = CProxy_AllGather::ckNew(k, n, sim, opts);
+    AllGather_array = CProxy_AllGather::ckNew(k, n, opts);
+
     sim.begin(AllGather_array);
   }
 
@@ -71,6 +79,7 @@ private:
   int x;
   int y;
   long int *data;
+  long int* result;
 
 public:
   simBox(CProxy_start startProxy, int k, int n, int x, int y)
@@ -88,14 +97,15 @@ public:
   }
 
   void begin(CProxy_AllGather AllGather_array) {
-    AllGather_array(thisIndex).begin(data, k);
+    CkCallback cb(CkIndex_simBox::done(NULL), CkArrayIndex1D(thisIndex), thisProxy);
+    AllGather_array(thisIndex).startGather(data, k, cb);
   }
 
-  void done(long int store[], int size) {
-    free(data);
-    int cont = 1;
-    CkCallback cbfini(CkReductionTarget(startProxy, fini), startProxy);
-    contribute(sizeof(int), &cont, CkReduction::sum_int, cbfini);
+  void done(callbackMsg *msg) {
+    result = msg->data;
+    int cnt = 1;
+    CkCallback cbfini(CkReductionTarget(start, fini), startProxy);
+    contribute(sizeof(int), &cnt, CkReduction::sum_int, cbfini);
   }
 };
 
@@ -106,15 +116,16 @@ private:
   long int *store;
   int numMsg = 0;
   double timeStamp = 0.0;
-  CProxy_simBox simBoxProxy;
+  CkCallback cb;
 
 public:
-  AllGather(int k, int n, CProxy_simBox simBoxProxy)
-      : k(k), n(n), simBoxProxy(simBoxProxy) {
+  AllGather(int k, int n)
+      : k(k), n(n) {
     store = (long int *)malloc(k * n * sizeof(long int));
   }
 
-  void begin(long int data[], int size) {
+  void startGather(long int data[], int size, CkCallback cb) {
+    this->cb = cb;
     for (int i = 0; i < k; i++) {
       store[k * thisIndex + i] = data[i];
     }
@@ -130,7 +141,8 @@ public:
     }
     timeStamp = max(recvTime, timeStamp);
     if (numMsg == n - 1) {
-      simBoxProxy(thisIndex).done(store, k * n);
+      callbackMsg *msg = new callbackMsg(store);
+      cb.send(msg);
     } else {
       thisProxy((thisIndex + 1) % n)
           .recv(sender, data, k, (timeStamp + alpha + beta * k * 8));
