@@ -11,6 +11,16 @@
 double alpha;
 double beta;
 
+// Question one ->
+// Why can the bound array not directly use (inherit) the data of the
+// parent array ? The two are bound to be on the same PE. Provided that they
+// are of the same type. 
+
+// Question two ->
+// Is it better that the allGather have only one chare array element broadcast the data
+// to all the user chare array elements or is it better to have one-to-one message passing
+// from bound to user chare array ? 
+
 class start : public CBase_start {
 private:
   int n;
