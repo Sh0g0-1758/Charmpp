@@ -104,6 +104,11 @@ public:
   void done(callbackMsg *msg) {
     result = msg->data;
     int cnt = 1;
+    ckout << "Data from chare " << thisIndex << " : " << endl;
+    for (int i = 0; i < k * n; i++) {
+      ckout << result[i] << " ";
+    }
+    ckout << endl;
     CkCallback cbfini(CkReductionTarget(start, fini), startProxy);
     contribute(sizeof(int), &cnt, CkReduction::sum_int, cbfini);
   }
@@ -125,6 +130,7 @@ public:
   }
 
   void startGather(long int data[], int size, CkCallback cb) {
+    numMsg++;
     this->cb = cb;
     for (int i = 0; i < k; i++) {
       store[k * thisIndex + i] = data[i];
@@ -132,6 +138,10 @@ public:
     thisProxy((thisIndex + 1) % n)
         .recv(thisIndex, data, k, (timeStamp + alpha + beta * k * 8));
     timeStamp += alpha;
+    if(numMsg == n) {
+      callbackMsg *msg = new callbackMsg(store);
+      cb.send(msg);
+    }
   }
 
   void recv(int sender, long int data[], int size, double recvTime) {
@@ -140,7 +150,7 @@ public:
       store[k * sender + i] = data[i];
     }
     timeStamp = max(recvTime, timeStamp);
-    if (numMsg == n - 1) {
+    if (numMsg == n) {
       callbackMsg *msg = new callbackMsg(store);
       cb.send(msg);
     } else {
