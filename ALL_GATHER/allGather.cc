@@ -88,7 +88,7 @@ public:
   }
 
   void begin(CProxy_AllGather AllGather_array) {
-    AllGather_array(thisIndex).begin(data, k, thisProxy);
+    AllGather_array(thisIndex).begin(data, k);
   }
 
   void done(long int store[], int size) {
