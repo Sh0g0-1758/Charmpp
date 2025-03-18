@@ -8,6 +8,9 @@
 #include <vector>
 #include <cstring>
 
+double alpha;
+double beta;
+
 class start : public CBase_start {
 private:
   int n;
@@ -18,21 +21,16 @@ private:
 public:
   start(CkArgMsg *msg) {
     if (msg->argc < 3) {
-      ckout << "Usage: " << msg->argv[0] << " <chare_array_size> <num_data_points_per_chare_array_element> <num_bits_for_pe | default = 20> <num_bits_for_data_points | default = 30>" << endl;
+      ckout << "Usage: " << msg->argv[0] << " <chare_array_size> <num_data_points_per_chare_array_element> <num_bits_for_pe> <num_bits_for_data_points> <alpha> <beta>" << endl;
       CkExit();
     }
+
     n = atoi(msg->argv[1]);
     k = atoi(msg->argv[2]);
-    if(msg->argc == 3) {
-      x = 20;
-      y = 30;
-    } else if(msg->argc == 4) {
-      x = atoi(msg->argv[3]);
-      y = 30;
-    } else {
-      x = atoi(msg->argv[3]);
-      y = atoi(msg->argv[4]);
-    }
+    x = atoi(msg->argv[3]);
+    y = atoi(msg->argv[4]);
+    alpha = atoi(msg->argv[5]);
+    beta = atoi(msg->argv[6]);
     delete msg;
 
     sim = CProxy_simBox::ckNew(thisProxy, k, n, x, y, n);
@@ -55,6 +53,7 @@ private:
   int y;
   long int* store;
   int numMsg = 0;
+  double timeStamp = 0.0;
 
 public:
   simBox(CProxy_start startProxy, int k, int n, int x, int y)
@@ -71,21 +70,24 @@ public:
       data[i] = base + i;
       store[k * thisIndex + i] = data[i];
     }
-    thisProxy((thisIndex + 1) % n).recv(thisIndex, data, k);
+    thisProxy((thisIndex + 1) % n).recv(thisIndex, data, k, (timeStamp + alpha + beta * k * 8));
+    timeStamp += alpha;
   }
 
-  void recv(int sender, long int data[], int size) {
+  void recv(int sender, long int data[], int size, double recvTime) {
     numMsg++;
     for(int i = 0; i < size; i++) {
       store[k * sender + i] = data[i];
     }
+    timeStamp = max(recvTime, timeStamp);
     if(numMsg == n - 1) {
       free(store);
       int cont = 1;
       CkCallback cbfini(CkReductionTarget(start, fini), startProxy);
       contribute(sizeof(int), &cont, CkReduction::sum_int, cbfini);
     } else {
-      thisProxy((thisIndex + 1) % n).recv(sender, data, k);
+      thisProxy((thisIndex + 1) % n).recv(sender, data, k, (timeStamp + alpha + beta * k * 8));
+      timeStamp += alpha;
     }
   }
 };
