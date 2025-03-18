@@ -6,4 +6,4 @@ build:
 	@echo "Build complete"
 
 run:
-	./charmrun +p20 ./sim 3 2 10 20 10 1
+	./charmrun +p20 ./sim 7 7 10 20 10 1
