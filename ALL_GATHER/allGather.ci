@@ -9,13 +9,13 @@ mainmodule allGather {
 
   array[1D] simBox {
     entry simBox(CProxy_start startProxy, int k, int n, int x, int y);
-    entry void start1(CProxy_AllGather allGatherProxy);
+    entry void begin(CProxy_AllGather allGatherProxy);
     entry void done(long int store[size], int size);
   }
 
   array[1D] AllGather {
     entry AllGather(int size, int n, CProxy_simBox simBoxProxy);
-    entry void allGather1(long int data[size], int size);
+    entry void begin(long int data[size], int size);
     entry void recv(int sender, long int data[size], int size, double recvTime);
   }
 };
