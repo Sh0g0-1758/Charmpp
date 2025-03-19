@@ -1,23 +1,12 @@
-mainmodule allGather {
+module allGather {
   readonly double alpha;
   readonly double beta;
 
-  message callbackMsg;
-
-  mainchare start {
-    entry start(CkArgMsg * m);
-    entry[reductiontarget] void fini(int numDone);
-  };
+  message allGatherMsg;
 
   array[1D] AllGather {
     entry AllGather(int size, int n);
     entry void startGather(long int data[size], int size, CkCallback cb);
     entry void recv(int sender, long int data[size], int size, double recvTime);
-  }
-
-  array[1D] simBox {
-    entry simBox(CProxy_start startProxy, int k, int n, int x, int y);
-    entry void begin(CProxy_AllGather allGatherProxy);
-    entry void done(callbackMsg *m);
   }
 };
