@@ -7,18 +7,22 @@ module allGather {
   array[1D] AllGather {
     entry AllGather(int size, int n, int type);
     entry void startGather(long int data[size], int size, CkCallback cb);
-    entry void recvDefault(int sender, long int data[size], int size, double recvTime);
+    entry void recvDefault(int sender, long int data[size], int size,
+                           double recvTime);
     entry void Hypercube() {
-      for(iter = 0; iter < numHypercubeIter; iter++) {
+      for (iter = 0; iter < numHypercubeIter; iter++) {
         serial { HypercubeToSend = thisIndex ^ ((int)pow(2, iter)); }
         if (HypercubeToSend < n) {
           serial {
-            thisProxy(HypercubeToSend).recvHypercube(iter, store, n * k, (timeStamp + alpha + beta * k * n * 8));
+            thisProxy(HypercubeToSend)
+                .recvHypercube(iter, store, n * k,
+                               (timeStamp + alpha + beta * k * n * 8));
             timeStamp += alpha;
           }
-          when recvHypercube[iter](int ref, long int data[size], int size, double recvTime) {
+          when recvHypercube[iter](int ref, long int data[size], int size,
+                                   double recvTime) {
             serial {
-              for(int m = 0; m < size; m++) {
+              for (int m = 0; m < size; m++) {
                 store[m] += data[m];
               }
               timeStamp = std::max(recvTime, timeStamp);
@@ -31,7 +35,9 @@ module allGather {
         cb.send(msg);
       }
     };
-    entry void recvHypercube(int ref, long int data[size], int size, double recvTime);
-    entry void Flood(int sender, long int data[size], int size, double recvTime);
+    entry void recvHypercube(int ref, long int data[size], int size,
+                             double recvTime);
+    entry void Flood(int sender, long int data[size], int size,
+                     double recvTime);
   };
 };

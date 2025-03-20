@@ -19,7 +19,8 @@ start::start(CkArgMsg *msg) {
 
   CkArrayOptions opts(n);
   opts.bindTo(sim);
-  AllGather_array = CProxy_AllGather::ckNew(k, n, (int)allGatherType::ALL_GATHER_HYPERCUBE, opts);
+  AllGather_array = CProxy_AllGather::ckNew(
+      k, n, (int)allGatherType::ALL_GATHER_HYPERCUBE, opts);
 
   sim.begin(AllGather_array);
 }
