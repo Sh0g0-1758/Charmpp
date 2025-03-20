@@ -35,7 +35,7 @@ simBox::simBox(CProxy_start startProxy, int k, int n, int x, int y)
     : startProxy(startProxy), k(k), n(n), x(x), y(y) {
   data = (long int *)malloc(k * sizeof(long int));
   long int max_serial = (1 << y) - 1;
-  long int base = CkMyPe();
+  long int base = thisIndex;
   while (max_serial > 0) {
     base = base * 10;
     max_serial = max_serial / 10;
@@ -53,12 +53,23 @@ void simBox::begin(CProxy_AllGather AllGather_array) {
 
 void simBox::done(allGatherMsg *msg) {
   result = msg->get_data();
-  int cnt = 1;
-  ckout << "Data from chare " << thisIndex << " : " << endl;
-  for (int i = 0; i < k * n; i++) {
-    ckout << result[i] << " ";
+  for(int i = 0; i < n; i++) {
+    long int max_serial = (1 << y) - 1;
+    long int base = i;
+    while (max_serial > 0) {
+      base = base * 10;
+      max_serial = max_serial / 10;
+    }
+    for(int j = 0; j < k; j++) {
+      if(result[i * k + j] != base + j) {
+        ckout << "[ERROR] Data mismatch" << endl;
+        CkExit();
+        break;
+      }
+    }
   }
-  ckout << endl;
+  ckout << "[STATUS] Correct result for Chare " << thisIndex << endl;
+  int cnt = 1;
   CkCallback cbfini(CkReductionTarget(start, fini), startProxy);
   contribute(sizeof(int), &cnt, CkReduction::sum_int, cbfini);
 }

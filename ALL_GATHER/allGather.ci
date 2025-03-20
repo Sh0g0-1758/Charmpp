@@ -32,5 +32,6 @@ module allGather {
       }
     };
     entry void recvHypercube(int ref, long int data[size], int size, double recvTime);
+    entry void Flood(int sender, long int data[size], int size, double recvTime);
   };
 };

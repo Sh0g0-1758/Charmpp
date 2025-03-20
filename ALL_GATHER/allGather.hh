@@ -24,16 +24,20 @@ enum allGatherType {
 
 class AllGather : public CBase_AllGather {
 private:
-  int k = 0;
-  int n = 0;
+  int k{};
+  int n{};
   long int *store;
-  int numDefaultMsg = 0;
-  double timeStamp = 0.0;
+  int numDefaultMsg{};
+  double timeStamp{};
   CkCallback cb;
   allGatherType type;
-  int numHypercubeIter = 0;
+  int numHypercubeIter{};
   int iter;
   int HypercubeToSend;
+  int numAccFloodMsg{};
+  std::vector<std::vector<int>> graph{};
+  std::map<int, bool> recvFloodMsg{};
+  int randCounter{};
 
 public:
   AllGather_SDAG_CODE
@@ -43,4 +47,8 @@ public:
   void startGather(long int data[], int _, CkCallback cb);
 
   void recvDefault(int sender, long int data[], int _, double recvTime);
+
+  int gen_rand();
+
+  void Flood(int sender, long int data[], int _, double recvTime);
 };
