@@ -38,5 +38,3 @@ public:
 
   void recv(int sender, long int data[], int _, double recvTime);
 };
-
-#include "allGather.def.h"
