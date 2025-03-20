@@ -17,4 +17,4 @@ run: sim
 clean:
 	rm -f *.decl.h *.def.h *.o charmrun sim
 
-.phony : build
+.phony : run clean sim allGather
