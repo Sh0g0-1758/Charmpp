@@ -5,14 +5,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <map>
-#include <random>
 #include <utility>
 #include <vector>
+#include <random>
 
 class allGatherMsg : public CMessage_allGatherMsg {
 private:
   long int *data;
-
 public:
   long int *get_data();
   allGatherMsg(long int *d);
