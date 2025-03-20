@@ -10,14 +10,13 @@
 #include <utility>
 #include <vector>
 
-double alpha;
-double beta;
+static double alpha;
+static double beta;
 
 class allGatherMsg : public CMessage_allGatherMsg {
 private:
   long int *data;
 public:
-  void set_data(long int *d);
   long int *get_data();
   allGatherMsg(long int *d);
 };
