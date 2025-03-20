@@ -2,6 +2,9 @@
 
 #include "allGather.def.h"
 
+double alpha;
+double beta;
+
 allGatherMsg::allGatherMsg(long int *d) : data(d){};
 long int *allGatherMsg::get_data() { return data; }
 

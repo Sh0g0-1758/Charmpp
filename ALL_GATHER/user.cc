@@ -4,7 +4,7 @@ start::start(CkArgMsg *msg) {
   if (msg->argc < 3) {
     ckout << "Usage: " << msg->argv[0]
           << " <chare_array_size> <num_data_points_per_chare_array_element> "
-             "<num_bits_for_pe> <num_bits_for_data_points> <alpha> <beta>"
+             "<num_bits_for_pe> <num_bits_for_data_points>"
           << endl;
     CkExit();
   }
@@ -13,8 +13,6 @@ start::start(CkArgMsg *msg) {
   k = atoi(msg->argv[2]);
   x = atoi(msg->argv[3]);
   y = atoi(msg->argv[4]);
-  alpha = atoi(msg->argv[5]);
-  beta = atoi(msg->argv[6]);
   delete msg;
 
   sim = CProxy_simBox::ckNew(thisProxy, k, n, x, y, n);

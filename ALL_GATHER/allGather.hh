@@ -10,9 +10,6 @@
 #include <utility>
 #include <vector>
 
-static double alpha;
-static double beta;
-
 class allGatherMsg : public CMessage_allGatherMsg {
 private:
   long int *data;
