@@ -6,8 +6,9 @@ double beta;
 allGatherMsg::allGatherMsg(long int *d) : data(d){};
 long int *allGatherMsg::get_data() { return data; }
 
-AllGather::AllGather(int k, int n) : k(k), n(n) {
+AllGather::AllGather(int k, int n, int type) : k(k), n(n) {
   store = (long int *)malloc(k * n * sizeof(long int));
+  type = (allGatherType)type;
 }
 
 void AllGather::startGather(long int data[], int _, CkCallback cb) {

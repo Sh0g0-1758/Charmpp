@@ -16,6 +16,12 @@ public:
   allGatherMsg(long int *d);
 };
 
+enum allGatherType {
+  ALL_GATHER_DEFAULT,
+  ALL_GATHER_HYPERCUBE,
+  ALL_GATHER_FLOODING
+};
+
 class AllGather : public CBase_AllGather {
 private:
   int k = 0;
@@ -24,9 +30,10 @@ private:
   int numMsg = 0;
   double timeStamp = 0.0;
   CkCallback cb;
+  allGatherType type;
 
 public:
-  AllGather(int k, int n);
+  AllGather(int k, int n, int type);
 
   void startGather(long int data[], int _, CkCallback cb);
 

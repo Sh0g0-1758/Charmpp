@@ -5,7 +5,7 @@ module allGather {
   message allGatherMsg;
 
   array[1D] AllGather {
-    entry AllGather(int size, int n);
+    entry AllGather(int size, int n, int type);
     entry void startGather(long int data[size], int size, CkCallback cb);
     entry void recv(int sender, long int data[size], int size, double recvTime);
   }
