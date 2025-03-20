@@ -27,15 +27,20 @@ private:
   int k = 0;
   int n = 0;
   long int *store;
-  int numMsg = 0;
+  int numDefaultMsg = 0;
   double timeStamp = 0.0;
   CkCallback cb;
   allGatherType type;
+  int numHypercubeIter = 0;
+  int iter;
+  int HypercubeToSend;
 
 public:
+  AllGather_SDAG_CODE
+
   AllGather(int k, int n, int type);
 
   void startGather(long int data[], int _, CkCallback cb);
 
-  void recv(int sender, long int data[], int _, double recvTime);
+  void recvDefault(int sender, long int data[], int _, double recvTime);
 };
