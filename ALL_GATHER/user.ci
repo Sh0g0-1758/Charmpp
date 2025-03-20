@@ -1,4 +1,6 @@
 mainmodule user {
+  extern module allGather;
+
   mainchare start {
     entry start(CkArgMsg * m);
     entry[reductiontarget] void fini(int numDone);
