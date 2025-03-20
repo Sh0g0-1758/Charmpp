@@ -1,5 +1,9 @@
 #include "allGather.hh"
 
+allGatherMsg::allGatherMsg(long int *d) : data(d){};
+void allGatherMsg::set_data(long int *d) { data = d; }
+long int *allGatherMsg::get_data() { return data; }
+
 AllGather::AllGather(int k, int n) : k(k), n(n) {
   store = (long int *)malloc(k * n * sizeof(long int));
 }

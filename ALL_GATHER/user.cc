@@ -54,7 +54,7 @@ void simBox::begin(CProxy_AllGather AllGather_array) {
 }
 
 void simBox::done(allGatherMsg *msg) {
-  result = msg->data;
+  result = msg->get_data();
   int cnt = 1;
   ckout << "Data from chare " << thisIndex << " : " << endl;
   for (int i = 0; i < k * n; i++) {

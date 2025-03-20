@@ -1,3 +1,5 @@
+#pragma once
+
 #include "allGather.decl.h"
 #include <cassert>
 #include <cstdlib>
@@ -12,9 +14,12 @@ double alpha;
 double beta;
 
 class allGatherMsg : public CMessage_allGatherMsg {
-public:
+private:
   long int *data;
-  allGatherMsg(long int *d) : data(d){};
+public:
+  void set_data(long int *d);
+  long int *get_data();
+  allGatherMsg(long int *d);
 };
 
 class AllGather : public CBase_AllGather {
