@@ -34,5 +34,3 @@ public:
 
   void done(allGatherMsg *msg);
 };
-
-#include "user.def.h"

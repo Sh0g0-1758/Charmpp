@@ -1,7 +1,5 @@
 #include "allGather.hh"
 
-#include "allGather.def.h"
-
 double alpha;
 double beta;
 
@@ -43,3 +41,5 @@ void AllGather::recv(int sender, long int data[], int _, double recvTime) {
     cb.send(msg);
   }
 }
+
+#include "allGather.def.h"

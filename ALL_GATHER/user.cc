@@ -1,7 +1,7 @@
 #include "user.hh"
 
 start::start(CkArgMsg *msg) {
-  if (msg->argc < 3) {
+  if (msg->argc != 5) {
     ckout << "Usage: " << msg->argv[0]
           << " <chare_array_size> <num_data_points_per_chare_array_element> "
              "<num_bits_for_pe> <num_bits_for_data_points>"
@@ -62,3 +62,5 @@ void simBox::done(allGatherMsg *msg) {
   CkCallback cbfini(CkReductionTarget(start, fini), startProxy);
   contribute(sizeof(int), &cnt, CkReduction::sum_int, cbfini);
 }
+
+#include "user.def.h"
