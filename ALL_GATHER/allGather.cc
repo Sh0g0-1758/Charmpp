@@ -16,6 +16,10 @@ AllGather::AllGather(int k, int n, int type) : k(k), n(n) {
   this->type = (allGatherType)type;
   switch (type) {
   case allGatherType::ALL_GATHER_HYPERCUBE: {
+    if((n & (n - 1)) != 0) {
+      CkPrintf("[ERROR] Hypercube only works when the size of chare array is a power of 2\n");
+      CkExit();
+    }
     numHypercubeIter = std::ceil(std::log2(n));
   } break;
   case allGatherType::ALL_GATHER_FLOODING: {

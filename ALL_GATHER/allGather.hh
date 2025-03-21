@@ -16,6 +16,7 @@ public:
   allGatherMsg(long int *d);
 };
 
+// NB: ALL_GATHER_HYPERCUBE only works when the size of chare array is a power of 2.
 enum allGatherType {
   ALL_GATHER_DEFAULT,
   ALL_GATHER_HYPERCUBE,
