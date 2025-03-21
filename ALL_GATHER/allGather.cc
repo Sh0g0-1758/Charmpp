@@ -16,7 +16,7 @@ AllGather::AllGather(int k, int n, int type) : k(k), n(n) {
   this->type = (allGatherType)type;
   switch (type) {
   case allGatherType::ALL_GATHER_HYPERCUBE: {
-    numHypercubeIter = std::ceil((int)std::log2(n));
+    numHypercubeIter = std::ceil(std::log2(n));
   } break;
   case allGatherType::ALL_GATHER_FLOODING: {
     store = (long int *)malloc(k * n * sizeof(long int));
