@@ -53,7 +53,6 @@ void simBox::begin(CProxy_AllGather AllGather_array) {
 
 void simBox::done(allGatherMsg *msg) {
   result = msg->get_data();
-  bool success = true;
   for(int i = 0; i < n; i++) {
     long int max_serial = (1 << y) - 1;
     long int base = i;
@@ -64,21 +63,12 @@ void simBox::done(allGatherMsg *msg) {
     for(int j = 0; j < k; j++) {
       if(result[i * k + j] != base + j) {
         ckout << "[ERROR] Data mismatch" << endl;
-        success = false;
+        CkExit();
         break;
       }
     }
-    if(!success) break;
   }
-
-  if(success) ckout << "[STATUS] Correct result for Chare " << thisIndex << endl;
-  else {
-    ckout << "[STATUS] Incorrect result for Chare " << thisIndex << endl;
-    for(int i = 0; i < n * k; i++) {
-      ckout << result[i] << " ";
-    }
-    ckout << endl;
-  }
+  ckout << "[STATUS] Correct result for Chare " << thisIndex << endl;
   int cnt = 1;
   CkCallback cbfini(CkReductionTarget(start, fini), startProxy);
   contribute(sizeof(int), &cnt, CkReduction::sum_int, cbfini);

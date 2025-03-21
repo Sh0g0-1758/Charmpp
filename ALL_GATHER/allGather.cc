@@ -13,13 +13,13 @@ int AllGather::gen_rand() {
 }
 
 AllGather::AllGather(int k, int n, int type) : k(k), n(n) {
-  this->type = (allGatherType)type;
+  store = (long int *)malloc(k * n * sizeof(long int));
+  type = (allGatherType)type;
   switch (type) {
   case allGatherType::ALL_GATHER_HYPERCUBE: {
     numHypercubeIter = std::ceil((int)std::log2(n));
   } break;
   case allGatherType::ALL_GATHER_FLOODING: {
-    store = (long int *)malloc(k * n * sizeof(long int));
     graph.resize(n);
     for (int i = 0; i < n; i++) {
       graph[i].resize(n);
@@ -40,19 +40,18 @@ AllGather::AllGather(int k, int n, int type) : k(k), n(n) {
       }
     }
   } break;
-  case allGatherType::ALL_GATHER_DEFAULT: {
-    store = (long int *)malloc(k * n * sizeof(long int));
-  } break;
+  case allGatherType::ALL_GATHER_DEFAULT:
+    break;
   }
 }
 
 void AllGather::startGather(long int data[], int _, CkCallback cb) {
   this->cb = cb;
+  for (int i = 0; i < k; i++) {
+    store[k * thisIndex + i] = data[i];
+  }
   switch (type) {
   case allGatherType::ALL_GATHER_DEFAULT: {
-    for (int i = 0; i < k; i++) {
-      store[k * thisIndex + i] = data[i];
-    }
     numDefaultMsg++;
 #ifdef TIMESTAMP
     thisProxy[(thisIndex + 1) % n].recvDefault(
@@ -67,16 +66,9 @@ void AllGather::startGather(long int data[], int _, CkCallback cb) {
     }
   } break;
   case allGatherType::ALL_GATHER_HYPERCUBE: {
-    hyperCubeIndx.push_back(thisIndex);
-    for (int i = 0; i < k; i++) {
-      hyperCubeStore.push_back(data[i]);
-    }
     thisProxy(thisIndex).Hypercube();
   } break;
   case allGatherType::ALL_GATHER_FLOODING: {
-    for (int i = 0; i < k; i++) {
-      store[k * thisIndex + i] = data[i];
-    }
     numAccFloodMsg++;
     recvFloodMsg[thisIndex] = true;
     for (int i = 0; i < n; i++) {

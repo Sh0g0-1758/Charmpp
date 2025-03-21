@@ -38,8 +38,6 @@ private:
   std::vector<std::vector<int>> graph{};
   std::map<int, bool> recvFloodMsg{};
   int randCounter{};
-  std::vector<int> hyperCubeIndx{};
-  std::vector<long int> hyperCubeStore{};
 
 public:
   AllGather_SDAG_CODE
