@@ -13,15 +13,21 @@ module allGather {
         serial { HypercubeToSend = thisIndex ^ ((int)pow(2, iter)); }
         if (HypercubeToSend < n) {
           serial {
+#ifdef TIMESTAMP
             thisProxy(HypercubeToSend).recvHypercube(iter, store, n * k, (timeStamp + alpha + beta * k * n * 8));
             timeStamp += alpha;
+#else
+            thisProxy(HypercubeToSend).recvHypercube(iter, store, n * k, 0.0);
+#endif
           }
           when recvHypercube[iter](int ref, long int data[size], int size, double recvTime) {
             serial {
               for(int m = 0; m < size; m++) {
                 store[m] += data[m];
               }
+#ifdef TIMESTAMP
               timeStamp = std::max(recvTime, timeStamp);
+#endif
             }
           }
         }

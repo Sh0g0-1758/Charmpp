@@ -53,9 +53,13 @@ void AllGather::startGather(long int data[], int _, CkCallback cb) {
   switch (type) {
   case allGatherType::ALL_GATHER_DEFAULT: {
     numDefaultMsg++;
+#ifdef TIMESTAMP
     thisProxy[(thisIndex + 1) % n].recvDefault(
         thisIndex, data, k, (timeStamp + alpha + beta * k * 8));
     timeStamp += alpha;
+#else
+    thisProxy[(thisIndex + 1) % n].recvDefault(thisIndex, data, k, 0.0);
+#endif
     if (numDefaultMsg == n) {
       allGatherMsg *msg = new allGatherMsg(store);
       cb.send(msg);
@@ -69,9 +73,13 @@ void AllGather::startGather(long int data[], int _, CkCallback cb) {
     recvFloodMsg[thisIndex] = true;
     for (int i = 0; i < n; i++) {
       if (graph[thisIndex][i] == 1) {
+#ifdef TIMESTAMP
         thisProxy(i).Flood(thisIndex, data, k,
                            (timeStamp + alpha + beta * k * 8));
         timeStamp += alpha;
+#else
+        thisProxy(i).Flood(thisIndex, data, k, 0.0);
+#endif
       }
     }
     if (numAccFloodMsg == n) {
@@ -88,11 +96,17 @@ void AllGather::recvDefault(int sender, long int data[], int _,
   for (int i = 0; i < k; i++) {
     store[k * sender + i] = data[i];
   }
+#ifdef TIMESTAMP
   timeStamp = std::max(recvTime, timeStamp);
+#endif
   if (((thisIndex + 1) % n) != sender) {
+#ifdef TIMESTAMP
     thisProxy[(thisIndex + 1) % n].recvDefault(
         sender, data, k, (timeStamp + alpha + beta * k * 8));
     timeStamp += alpha;
+#else
+    thisProxy[(thisIndex + 1) % n].recvDefault(sender, data, k, 0.0);
+#endif
   }
   if (numDefaultMsg == n) {
     allGatherMsg *msg = new allGatherMsg(store);
@@ -109,11 +123,17 @@ void AllGather::Flood(int sender, long int data[], int _, double recvTime) {
   for (int i = 0; i < k; i++) {
     store[k * sender + i] = data[i];
   }
+#ifdef TIMESTAMP
   timeStamp = std::max(recvTime, timeStamp);
+#endif
   for (int i = 0; i < n; i++) {
     if (graph[thisIndex][i] == 1 and i != sender) {
+#ifdef TIMESTAMP
       thisProxy(i).Flood(sender, data, k, (timeStamp + alpha + beta * k * 8));
       timeStamp += alpha;
+#else
+      thisProxy(i).Flood(sender, data, k, 0.0);
+#endif
     }
   }
   if (numAccFloodMsg == n) {
