@@ -37,13 +37,14 @@ private:
   std::vector<int> hyperCubeIndx{};
   std::vector<long int> hyperCubeStore{};
   allGatherMsg *msg = new allGatherMsg;
+  long int* data;
 
 public:
   AllGather_SDAG_CODE
 
   AllGather(int k, int n, int type);
 
-  void startGather(long int data[], int _, CkCallback cb);
+  void startGather();
 
   void recvDefault(int sender, long int data[], int _, double recvTime);
 
@@ -51,5 +52,7 @@ public:
 
   void Flood(int sender, long int data[], int _, double recvTime);
 
-  void setResBuffer(long int* result) { store = result; };
+  void init(long int* result, long int* data, CkCallback cb);
+
+  void initdone(int num);
 };

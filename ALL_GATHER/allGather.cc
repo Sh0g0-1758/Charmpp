@@ -45,8 +45,23 @@ AllGather::AllGather(int k, int n, int type) : k(k), n(n) {
   }
 }
 
-void AllGather::startGather(long int data[], int _, CkCallback cb) {
+// will be called only for index 0
+void AllGather::initdone(int num) {
+  if (num == n) {
+    thisProxy.startGather();
+  }
+}
+
+void AllGather::init(long int* result, long int* data, CkCallback cb) {
   this->cb = cb;
+  this->store = result;
+  this->data = data;
+  int cnt = 1;
+  CkCallback cbinitdone(CkReductionTarget(AllGather, initdone), thisProxy(0));
+  contribute(sizeof(int), &cnt, CkReduction::sum_int, cbinitdone);
+}
+
+void AllGather::startGather() {
   switch (type) {
   case allGatherType::ALL_GATHER_DEFAULT: {
     for (int i = 0; i < k; i++) {

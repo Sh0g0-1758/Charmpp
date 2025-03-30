@@ -6,7 +6,8 @@ module allGather {
 
   array[1D] AllGather {
     entry AllGather(int size, int n, int type);
-    entry void startGather(long int data[size], int size, CkCallback cb);
+    entry[reductiontarget] void initdone(int num);
+    entry void startGather();
     entry void recvDefault(int sender, long int data[size], int size, double recvTime);
     entry void Hypercube() {
       for(iter = 0; iter < numHypercubeIter; iter++) {
