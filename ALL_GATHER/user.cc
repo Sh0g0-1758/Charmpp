@@ -66,7 +66,6 @@ void simBox::done(allGatherMsg *msg) {
     }
     for(int j = 0; j < k; j++) {
       if(result[i * k + j] != base + j) {
-        ckout << "[ERROR] Data mismatch" << endl;
         success = false;
         break;
       }

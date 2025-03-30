@@ -3,9 +3,6 @@
 double alpha;
 double beta;
 
-allGatherMsg::allGatherMsg(long int *d) : data(d) {};
-long int *allGatherMsg::get_data() { return data; }
-
 int AllGather::gen_rand() {
   std::mt19937_64 gen(randCounter++);
   std::uniform_int_distribution<int> dis(0, n - 1);
@@ -23,7 +20,6 @@ AllGather::AllGather(int k, int n, int type) : k(k), n(n) {
     numHypercubeIter = std::ceil(std::log2(n));
   } break;
   case allGatherType::ALL_GATHER_FLOODING: {
-    store = (long int *)malloc(k * n * sizeof(long int));
     graph.resize(n);
     for (int i = 0; i < n; i++) {
       graph[i].resize(n);
@@ -45,9 +41,6 @@ AllGather::AllGather(int k, int n, int type) : k(k), n(n) {
     }
   } break;
   case allGatherType::ALL_GATHER_DEFAULT: {
-    // ckout << store[0] << endl;
-    // CkExit();
-    // store = (long int *)malloc(k * n * sizeof(long int));
   } break;
   }
 }
@@ -68,7 +61,6 @@ void AllGather::startGather(long int data[], int _, CkCallback cb) {
     thisProxy[(thisIndex + 1) % n].recvDefault(thisIndex, data, k, 0.0);
 #endif
     if (numDefaultMsg == n) {
-      allGatherMsg *msg = new allGatherMsg(store);
       cb.send(msg);
     }
   } break;
@@ -97,7 +89,6 @@ void AllGather::startGather(long int data[], int _, CkCallback cb) {
       }
     }
     if (numAccFloodMsg == n) {
-      allGatherMsg *msg = new allGatherMsg(store);
       cb.send(msg);
     }
   } break;
@@ -123,7 +114,6 @@ void AllGather::recvDefault(int sender, long int data[], int _,
 #endif
   }
   if (numDefaultMsg == n) {
-    allGatherMsg *msg = new allGatherMsg(store);
     cb.send(msg);
   }
 }
@@ -151,7 +141,6 @@ void AllGather::Flood(int sender, long int data[], int _, double recvTime) {
     }
   }
   if (numAccFloodMsg == n) {
-    allGatherMsg *msg = new allGatherMsg(store);
     cb.send(msg);
   }
 }

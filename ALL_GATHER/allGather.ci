@@ -44,14 +44,12 @@ module allGather {
         }
       }
       serial {
-        long int* msgData = (long int*)malloc(n * k * sizeof(long int));
         for(int m = 0; m < hyperCubeIndx.size(); m++) {
           int currIndx = hyperCubeIndx[m];
           for(int j = 0; j < k; j++) {
-            msgData[k * currIndx + j] = hyperCubeStore[m * k + j];
+            store[k * currIndx + j] = hyperCubeStore[m * k + j];
           }
         }
-        allGatherMsg *msg = new allGatherMsg(msgData);
         cb.send(msg);
       }
     };

@@ -9,13 +9,7 @@
 #include <vector>
 #include <random>
 
-class allGatherMsg : public CMessage_allGatherMsg {
-private:
-  long int *data;
-public:
-  long int *get_data();
-  allGatherMsg(long int *d);
-};
+class allGatherMsg : public CMessage_allGatherMsg {};
 
 // NB: ALL_GATHER_HYPERCUBE only works when the size of chare array is a power of 2.
 enum allGatherType {
@@ -42,6 +36,7 @@ private:
   int randCounter{};
   std::vector<int> hyperCubeIndx{};
   std::vector<long int> hyperCubeStore{};
+  allGatherMsg *msg = new allGatherMsg;
 
 public:
   AllGather_SDAG_CODE

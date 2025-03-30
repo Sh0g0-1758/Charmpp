@@ -12,7 +12,7 @@ sim: allGather
 	$(CHARMC) -o sim user.o allGather.o
 
 run: sim
-	./charmrun +p1 ./sim 5 5 10 10
+	./charmrun +p7 ./sim 7 5 10 10
 
 clean:
 	rm -f *.decl.h *.def.h *.o charmrun sim
