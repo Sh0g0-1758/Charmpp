@@ -7,6 +7,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <random>
 
 class allGatherMsg : public CMessage_allGatherMsg {
 private:
@@ -54,4 +55,6 @@ public:
   int gen_rand();
 
   void Flood(int sender, long int data[], int _, double recvTime);
+
+  void setResBuffer(long int* result) { ckout << "niggachu" << endl; store = result; };
 };

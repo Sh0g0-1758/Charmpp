@@ -26,6 +26,7 @@ private:
   int y;
   long int *data;
   long int *result;
+  AllGather* libptr;
 
 public:
   simBox(CProxy_start startProxy, int k, int n, int x, int y);
