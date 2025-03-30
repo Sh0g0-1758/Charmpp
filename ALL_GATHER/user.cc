@@ -49,8 +49,6 @@ void simBox::begin(CProxy_AllGather AllGather_array) {
   // get a local pointer to the chare array
   libptr = AllGather_array(thisIndex).ckLocal();
   result = (long int *)malloc(k * n * sizeof(long int));
-  result[0] = thisIndex;
-  ckout<<"here"<<endl;
   libptr->setResBuffer(result);
 
   CkCallback cb(CkIndex_simBox::done(NULL), CkArrayIndex1D(thisIndex), thisProxy);
@@ -58,7 +56,6 @@ void simBox::begin(CProxy_AllGather AllGather_array) {
 }
 
 void simBox::done(allGatherMsg *msg) {
-  result = msg->get_data();
   bool success = true;
   for(int i = 0; i < n; i++) {
     long int max_serial = (1 << y) - 1;

@@ -56,5 +56,5 @@ public:
 
   void Flood(int sender, long int data[], int _, double recvTime);
 
-  void setResBuffer(long int* result) { ckout << "niggachu" << endl; store = result; };
+  void setResBuffer(long int* result) { store = result; };
 };
