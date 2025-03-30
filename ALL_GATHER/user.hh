@@ -26,6 +26,7 @@ private:
   int y;
   long int *data;
   long int *result;
+  CProxy_AllGather AllGather_array;
 
 public:
   simBox(CProxy_start startProxy, int k, int n, int x, int y);

@@ -66,6 +66,7 @@ void AllGather::startGather(long int data[], int _, CkCallback cb) {
     thisProxy[(thisIndex + 1) % n].recvDefault(thisIndex, data, k, 0.0);
 #endif
     if (numDefaultMsg == n) {
+      ckout << "Lib addr> " << store << endl;
       allGatherMsg *msg = new allGatherMsg(store);
       cb.send(msg);
     }
@@ -121,6 +122,7 @@ void AllGather::recvDefault(int sender, long int data[], int _,
 #endif
   }
   if (numDefaultMsg == n) {
+    ckout << "Lib addr> " << store << endl;
     allGatherMsg *msg = new allGatherMsg(store);
     cb.send(msg);
   }

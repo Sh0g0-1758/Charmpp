@@ -19,7 +19,7 @@ start::start(CkArgMsg *msg) {
 
   CkArrayOptions opts(n);
   opts.bindTo(sim);
-  AllGather_array = CProxy_AllGather::ckNew(k, n, (int)allGatherType::ALL_GATHER_HYPERCUBE, opts);
+  AllGather_array = CProxy_AllGather::ckNew(k, n, (int)allGatherType::ALL_GATHER_DEFAULT, opts);
 
   sim.begin(AllGather_array);
 }
@@ -46,13 +46,17 @@ simBox::simBox(CProxy_start startProxy, int k, int n, int x, int y)
 }
 
 void simBox::begin(CProxy_AllGather AllGather_array) {
+  this->AllGather_array = AllGather_array;
   CkCallback cb(CkIndex_simBox::done(NULL), CkArrayIndex1D(thisIndex),
                 thisProxy);
   AllGather_array(thisIndex).startGather(data, k, cb);
 }
 
 void simBox::done(allGatherMsg *msg) {
+  AllGather_array(thisIndex).ckDestroy();
   result = msg->get_data();
+  ckout << "RES: " << result[0] << endl;
+  ckout << "User addr> " << result << endl;
   bool success = true;
   for(int i = 0; i < n; i++) {
     long int max_serial = (1 << y) - 1;
@@ -71,6 +75,8 @@ void simBox::done(allGatherMsg *msg) {
     if(!success) break;
   }
 
+  sleep(5);
+
   if(success) ckout << "[STATUS] Correct result for Chare " << thisIndex << endl;
   else {
     ckout << "[STATUS] Incorrect result for Chare " << thisIndex << endl;
@@ -78,6 +84,7 @@ void simBox::done(allGatherMsg *msg) {
       ckout << result[i] << " ";
     }
     ckout << endl;
+    CkExit();
   }
   int cnt = 1;
   CkCallback cbfini(CkReductionTarget(start, fini), startProxy);

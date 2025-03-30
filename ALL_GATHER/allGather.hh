@@ -47,6 +47,14 @@ public:
 
   AllGather(int k, int n, int type);
 
+  ~AllGather() {
+    ckout << "[INFO] Deleting AllGather" << endl;
+    if (store) {
+      store[0] = 69;
+      ckout << "STORE: " << store[0] << endl;
+    }
+  }
+
   void startGather(long int data[], int _, CkCallback cb);
 
   void recvDefault(int sender, long int data[], int _, double recvTime);
