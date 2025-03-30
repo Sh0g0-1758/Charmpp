@@ -48,7 +48,7 @@ simBox::simBox(CProxy_start startProxy, int k, int n, int x, int y)
 
 void simBox::begin(CProxy_AllGather AllGather_array) {
   CkCallback cb(CkIndex_simBox::done(NULL), CkArrayIndex1D(thisIndex), thisProxy);
-  libptr = AllGather_array(thisIndex).ckLocal();
+  AllGather* libptr = AllGather_array(thisIndex).ckLocal();
   libptr->init(result, data, cb);
 }
 
