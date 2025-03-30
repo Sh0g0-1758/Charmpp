@@ -19,7 +19,7 @@ start::start(CkArgMsg *msg) {
 
   CkArrayOptions opts(n);
   opts.bindTo(sim);
-  AllGather_array = CProxy_AllGather::ckNew(k, n, (int)allGatherType::ALL_GATHER_DEFAULT, opts);
+  AllGather_array = CProxy_AllGather::ckNew(k, n, (int)allGatherType::ALL_GATHER_HYPERCUBE, opts);
 
   sim.begin(AllGather_array);
 }
@@ -46,14 +46,8 @@ simBox::simBox(CProxy_start startProxy, int k, int n, int x, int y)
 }
 
 void simBox::begin(CProxy_AllGather AllGather_array) {
-  // get a local pointer to the chare array
-  libptr = AllGather_array(thisIndex).ckLocal();
-  result = (long int *)malloc(k * n * sizeof(long int));
-  result[0] = thisIndex;
-  ckout<<"here"<<endl;
-  libptr->setResBuffer(result);
-
-  CkCallback cb(CkIndex_simBox::done(NULL), CkArrayIndex1D(thisIndex), thisProxy);
+  CkCallback cb(CkIndex_simBox::done(NULL), CkArrayIndex1D(thisIndex),
+                thisProxy);
   AllGather_array(thisIndex).startGather(data, k, cb);
 }
 

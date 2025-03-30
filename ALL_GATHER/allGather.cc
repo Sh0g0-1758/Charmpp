@@ -3,7 +3,7 @@
 double alpha;
 double beta;
 
-allGatherMsg::allGatherMsg(long int *d) : data(d) {};
+allGatherMsg::allGatherMsg(long int *d) : data(d){};
 long int *allGatherMsg::get_data() { return data; }
 
 int AllGather::gen_rand() {
@@ -45,9 +45,7 @@ AllGather::AllGather(int k, int n, int type) : k(k), n(n) {
     }
   } break;
   case allGatherType::ALL_GATHER_DEFAULT: {
-    // ckout << store[0] << endl;
-    // CkExit();
-    // store = (long int *)malloc(k * n * sizeof(long int));
+    store = (long int *)malloc(k * n * sizeof(long int));
   } break;
   }
 }
